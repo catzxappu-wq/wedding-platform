@@ -1,5 +1,6 @@
 import React from "react";
 import prisma from "@/lib/prisma";
+import { invitationStore } from "@/lib/invitationStore";
 import { notFound } from "next/navigation";
 import InvitationBuilderWizard from "@/components/admin/InvitationBuilderWizard";
 
@@ -26,6 +27,10 @@ export default async function EditInvitationPage({ params }: EditPageProps) {
     });
   } catch (err) {
     console.warn("Failed to fetch invitation for edit:", err);
+  }
+
+  if (!invitation) {
+    invitation = invitationStore.getInvitationById(params.id) || invitationStore.getInvitationBySlug(params.id);
   }
 
   if (!invitation) {

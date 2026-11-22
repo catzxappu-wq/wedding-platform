@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { invitationStore } from "@/lib/invitationStore";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,26 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const invitation = await prisma.invitation.findUnique({
-      where: { id: params.id },
-      include: {
-        couple: true,
-        venue: true,
-        events: { orderBy: { sortOrder: "asc" } },
-        gallery: { orderBy: { sortOrder: "asc" } },
-        rsvps: { orderBy: { createdAt: "desc" } },
-        template: true,
-      },
-    });
+    let invitation: any = null;
+    try {
+      invitation = await prisma.invitation.findUnique({
+        where: { id: params.id },
+        include: {
+          couple: true,
+          venue: true,
+          events: { orderBy: { sortOrder: "asc" } },
+          gallery: { orderBy: { sortOrder: "asc" } },
+          rsvps: { orderBy: { createdAt: "desc" } },
+          template: true,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("DB lookup error in GET /api/invitations/[id]:", dbErr);
+    }
+
+    if (!invitation) {
+      invitation = invitationStore.getInvitationById(params.id);
+    }
 
     if (!invitation) {
       return NextResponse.json({ error: "Invitation not found" }, { status: 404 });
@@ -76,151 +86,169 @@ export async function PUT(request: Request, { params }: Params) {
       gallery,
     } = body;
 
-    // Check if new slug is taken by another invitation
-    if (newSlug) {
-      const cleanSlug = slugify(newSlug);
-      const existing = await prisma.invitation.findFirst({
-        where: {
-          slug: cleanSlug,
-          NOT: { id: params.id },
+    // Immediately update backup store so changes take effect
+    const updatedStoreRecord = invitationStore.saveInvitation({
+      ...body,
+      id: params.id,
+      slug: newSlug ? slugify(newSlug) : undefined,
+    });
+
+    let fullUpdated: any = null;
+
+    try {
+      // Check if new slug is taken by another invitation
+      if (newSlug) {
+        const cleanSlug = slugify(newSlug);
+        const existing = await prisma.invitation.findFirst({
+          where: {
+            slug: cleanSlug,
+            NOT: { id: params.id },
+          },
+        });
+        if (existing) {
+          return NextResponse.json(
+            { error: `The URL slug "${cleanSlug}" is already in use by another invitation.` },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Update main invitation
+      await prisma.invitation.update({
+        where: { id: params.id },
+        data: {
+          title,
+          ...(newSlug ? { slug: slugify(newSlug) } : {}),
+          status,
+          templateId,
+          primaryColor,
+          secondaryColor,
+          accentColor,
+          backgroundColor,
+          textColor,
+          fontFamily,
+          headingFont,
+          musicEnabled,
+          musicTitle,
+          musicUrl,
+          weddingDate: weddingDate ? new Date(weddingDate) : undefined,
+          startTime,
+          endTime,
+          timeZone,
+          couple: couple
+            ? {
+                upsert: {
+                  create: {
+                    groomName: couple.groomName || "Groom",
+                    brideName: couple.brideName || "Bride",
+                    groomPhoto: couple.groomPhoto || null,
+                    bridePhoto: couple.bridePhoto || null,
+                    couplePhoto: couple.couplePhoto || null,
+                    introduction: couple.introduction || null,
+                    story: couple.story || null,
+                    familyMessage: couple.familyMessage || null,
+                    familyNames: couple.familyNames || null,
+                  },
+                  update: {
+                    groomName: couple.groomName,
+                    brideName: couple.brideName,
+                    groomPhoto: couple.groomPhoto,
+                    bridePhoto: couple.bridePhoto,
+                    couplePhoto: couple.couplePhoto,
+                    introduction: couple.introduction,
+                    story: couple.story,
+                    familyMessage: couple.familyMessage,
+                    familyNames: couple.familyNames,
+                  },
+                },
+              }
+            : undefined,
+          venue: venue
+            ? {
+                upsert: {
+                  create: {
+                    venueName: venue.venueName || "Venue",
+                    fullAddress: venue.fullAddress || "",
+                    city: venue.city || "",
+                    state: venue.state || "",
+                    country: venue.country || "India",
+                    latitude: venue.latitude ? parseFloat(venue.latitude) : null,
+                    longitude: venue.longitude ? parseFloat(venue.longitude) : null,
+                    googleMapsUrl: venue.googleMapsUrl || "https://maps.google.com",
+                  },
+                  update: {
+                    venueName: venue.venueName,
+                    fullAddress: venue.fullAddress,
+                    city: venue.city,
+                    state: venue.state,
+                    country: venue.country,
+                    latitude: venue.latitude ? parseFloat(venue.latitude) : null,
+                    longitude: venue.longitude ? parseFloat(venue.longitude) : null,
+                    googleMapsUrl: venue.googleMapsUrl,
+                  },
+                },
+              }
+            : undefined,
         },
       });
-      if (existing) {
-        return NextResponse.json(
-          { error: `The URL slug "${cleanSlug}" is already in use by another invitation.` },
-          { status: 400 }
-        );
+
+      // Replace events if provided
+      if (events && Array.isArray(events)) {
+        await prisma.event.deleteMany({ where: { invitationId: params.id } });
+        await prisma.event.createMany({
+          data: events.map((ev: any, index: number) => ({
+            invitationId: params.id,
+            name: ev.name,
+            date: new Date(ev.date || weddingDate || new Date()),
+            startTime: ev.startTime || "10:00 AM",
+            endTime: ev.endTime || null,
+            venueName: ev.venueName || venue?.venueName || "Wedding Venue",
+            address: ev.address || venue?.fullAddress || "",
+            description: ev.description || "",
+            icon: ev.icon || "Sparkles",
+            imageUrl: ev.imageUrl || null,
+            sortOrder: ev.sortOrder ?? index,
+          })),
+        });
       }
-    }
 
-    // Update main invitation
-    const updated = await prisma.invitation.update({
-      where: { id: params.id },
-      data: {
-        title,
-        ...(newSlug ? { slug: slugify(newSlug) } : {}),
-        status,
-        templateId,
-        primaryColor,
-        secondaryColor,
-        accentColor,
-        backgroundColor,
-        textColor,
-        fontFamily,
-        headingFont,
-        musicEnabled,
-        musicTitle,
-        musicUrl,
-        weddingDate: weddingDate ? new Date(weddingDate) : undefined,
-        startTime,
-        endTime,
-        timeZone,
-        couple: couple
-          ? {
-              upsert: {
-                create: {
-                  groomName: couple.groomName || "Groom",
-                  brideName: couple.brideName || "Bride",
-                  groomPhoto: couple.groomPhoto || null,
-                  bridePhoto: couple.bridePhoto || null,
-                  couplePhoto: couple.couplePhoto || null,
-                  introduction: couple.introduction || null,
-                  story: couple.story || null,
-                  familyMessage: couple.familyMessage || null,
-                  familyNames: couple.familyNames || null,
-                },
-                update: {
-                  groomName: couple.groomName,
-                  brideName: couple.brideName,
-                  groomPhoto: couple.groomPhoto,
-                  bridePhoto: couple.bridePhoto,
-                  couplePhoto: couple.couplePhoto,
-                  introduction: couple.introduction,
-                  story: couple.story,
-                  familyMessage: couple.familyMessage,
-                  familyNames: couple.familyNames,
-                },
-              },
-            }
-          : undefined,
-        venue: venue
-          ? {
-              upsert: {
-                create: {
-                  venueName: venue.venueName || "Venue",
-                  fullAddress: venue.fullAddress || "",
-                  city: venue.city || "",
-                  state: venue.state || "",
-                  country: venue.country || "India",
-                  latitude: venue.latitude ? parseFloat(venue.latitude) : null,
-                  longitude: venue.longitude ? parseFloat(venue.longitude) : null,
-                  googleMapsUrl: venue.googleMapsUrl || "https://maps.google.com",
-                },
-                update: {
-                  venueName: venue.venueName,
-                  fullAddress: venue.fullAddress,
-                  city: venue.city,
-                  state: venue.state,
-                  country: venue.country,
-                  latitude: venue.latitude ? parseFloat(venue.latitude) : null,
-                  longitude: venue.longitude ? parseFloat(venue.longitude) : null,
-                  googleMapsUrl: venue.googleMapsUrl,
-                },
-              },
-            }
-          : undefined,
-      },
-    });
+      // Replace gallery if provided
+      if (gallery && Array.isArray(gallery)) {
+        await prisma.gallery.deleteMany({ where: { invitationId: params.id } });
+        await prisma.gallery.createMany({
+          data: gallery.map((g: any, index: number) => ({
+            invitationId: params.id,
+            imageUrl: g.imageUrl,
+            caption: g.caption || null,
+            sortOrder: g.sortOrder ?? index,
+            isCover: g.isCover || index === 0,
+          })),
+        });
+      }
 
-    // Replace events if provided
-    if (events && Array.isArray(events)) {
-      await prisma.event.deleteMany({ where: { invitationId: params.id } });
-      await prisma.event.createMany({
-        data: events.map((ev: any, index: number) => ({
-          invitationId: params.id,
-          name: ev.name,
-          date: new Date(ev.date || weddingDate || new Date()),
-          startTime: ev.startTime || "10:00 AM",
-          endTime: ev.endTime || null,
-          venueName: ev.venueName || venue?.venueName || "Wedding Venue",
-          address: ev.address || venue?.fullAddress || "",
-          description: ev.description || "",
-          icon: ev.icon || "Sparkles",
-          imageUrl: ev.imageUrl || null,
-          sortOrder: ev.sortOrder ?? index,
-        })),
+      fullUpdated = await prisma.invitation.findUnique({
+        where: { id: params.id },
+        include: {
+          couple: true,
+          venue: true,
+          events: { orderBy: { sortOrder: "asc" } },
+          gallery: { orderBy: { sortOrder: "asc" } },
+          rsvps: true,
+          template: true,
+        },
       });
-    }
 
-    // Replace gallery if provided
-    if (gallery && Array.isArray(gallery)) {
-      await prisma.gallery.deleteMany({ where: { invitationId: params.id } });
-      await prisma.gallery.createMany({
-        data: gallery.map((g: any, index: number) => ({
-          invitationId: params.id,
-          imageUrl: g.imageUrl,
-          caption: g.caption || null,
-          sortOrder: g.sortOrder ?? index,
-          isCover: g.isCover || index === 0,
-        })),
-      });
+      if (fullUpdated) {
+        invitationStore.saveInvitation(fullUpdated);
+      }
+    } catch (dbErr: any) {
+      console.warn("DB update failed, using updated backup store record:", dbErr?.message);
+      fullUpdated = updatedStoreRecord;
     }
-
-    const fullUpdated = await prisma.invitation.findUnique({
-      where: { id: params.id },
-      include: {
-        couple: true,
-        venue: true,
-        events: { orderBy: { sortOrder: "asc" } },
-        gallery: { orderBy: { sortOrder: "asc" } },
-        rsvps: true,
-        template: true,
-      },
-    });
 
     return NextResponse.json({
       success: true,
-      invitation: fullUpdated,
+      invitation: fullUpdated || updatedStoreRecord,
       message: "Invitation updated successfully",
     });
   } catch (error: any) {
@@ -237,9 +265,15 @@ export async function DELETE(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.invitation.delete({
-      where: { id: params.id },
-    });
+    invitationStore.deleteInvitation(params.id);
+
+    try {
+      await prisma.invitation.delete({
+        where: { id: params.id },
+      });
+    } catch (dbErr) {
+      console.warn("Prisma delete warning:", dbErr);
+    }
 
     return NextResponse.json({ success: true, message: "Invitation deleted successfully" });
   } catch (error: any) {

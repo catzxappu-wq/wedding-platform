@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+import { invitationStore } from "@/lib/invitationStore";
 
 export const dynamic = "force-dynamic";
 
@@ -25,15 +26,37 @@ export async function GET(request: Request) {
       whereClause.attending = attendingOnly === "true";
     }
 
-    const rsvps = await prisma.rsvp.findMany({
-      where: whereClause,
-      include: {
-        invitation: {
-          include: { couple: true },
+    let rsvps: any[] = [];
+    try {
+      rsvps = await prisma.rsvp.findMany({
+        where: whereClause,
+        include: {
+          invitation: {
+            include: { couple: true },
+          },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (dbErr) {
+      console.warn("Prisma RSVP query skipped/failed:", dbErr);
+    }
+
+    // Merge backup store RSVPs
+    const allInvs = invitationStore.getAllInvitations();
+    const existingRsvpIds = new Set(rsvps.map((r) => r.id));
+    for (const inv of allInvs) {
+      if (invitationId && invitationId !== "ALL" && inv.id !== invitationId && inv.slug !== invitationId) {
+        continue;
+      }
+      for (const r of inv.rsvps || []) {
+        if (!existingRsvpIds.has(r.id)) {
+          rsvps.push({
+            ...r,
+            invitation: { title: inv.title, couple: inv.couple },
+          });
+        }
+      }
+    }
 
     // If CSV export requested:
     if (exportCsv) {
@@ -41,7 +64,7 @@ export async function GET(request: Request) {
       const rows = rsvps.map((r) => [
         `"${r.id}"`,
         `"${r.invitation?.title || ""}"`,
-        `"${r.guestName.replace(/"/g, '""')}"`,
+        `"${r.guestName?.replace(/"/g, '""') || ""}"`,
         `"${r.phone}"`,
         `"${r.email || ""}"`,
         r.guestsCount,
@@ -119,30 +142,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
     }
 
-    const invitation = await prisma.invitation.findUnique({
-      where: { id: invitationId },
+    // Always mirror to backup store
+    invitationStore.addRsvp(invitationId, {
+      guestName: guestName.trim(),
+      phone: phone.trim(),
+      email: email?.trim() || null,
+      guestsCount: parseInt(String(guestsCount), 10) || 1,
+      attending: Boolean(attending),
+      foodPreference: foodPreference || "veg",
+      message: message?.trim() || null,
     });
 
-    if (!invitation) {
-      return NextResponse.json({ error: "Wedding invitation not found" }, { status: 404 });
+    let rsvp: any = null;
+    try {
+      rsvp = await prisma.rsvp.create({
+        data: {
+          invitationId,
+          guestName: guestName.trim(),
+          phone: phone.trim(),
+          email: email?.trim() || null,
+          guestsCount: parseInt(String(guestsCount), 10) || 1,
+          attending: Boolean(attending),
+          foodPreference: foodPreference || "veg",
+          message: message?.trim() || null,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("Prisma RSVP create skipped/failed, saved to backup store:", dbErr);
     }
-
-    const rsvp = await prisma.rsvp.create({
-      data: {
-        invitationId,
-        guestName: guestName.trim(),
-        phone: phone.trim(),
-        email: email?.trim() || null,
-        guestsCount: parseInt(String(guestsCount), 10) || 1,
-        attending: Boolean(attending),
-        foodPreference: foodPreference || "veg",
-        message: message?.trim() || null,
-      },
-    });
 
     return NextResponse.json({
       success: true,
-      rsvp,
+      rsvp: rsvp || { guestName, attending },
       message: attending
         ? "Thank you! Your RSVP has been confirmed. We look forward to celebrating together!"
         : "Thank you for letting us know. You will be missed!",

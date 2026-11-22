@@ -225,12 +225,13 @@ export default function InvitationBuilderWizard({
   };
 
   // Save / Submit logic
-  const handleSave = async (overrideStatus?: string) => {
+  const handleSave = async (overrideStatus?: string): Promise<boolean> => {
     setSaving(true);
     try {
+      const newStatus = overrideStatus || formData.status;
       const payload = {
         ...formData,
-        status: overrideStatus || formData.status,
+        status: newStatus,
       };
 
       const url = isEditing ? `/api/invitations/${invitationId}` : "/api/invitations";
@@ -245,17 +246,28 @@ export default function InvitationBuilderWizard({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
 
-      showToast(isEditing ? "Changes saved successfully!" : "Invitation created successfully!");
+      setFormData((prev) => ({ ...prev, status: newStatus }));
+      showToast(isEditing ? "Changes saved successfully!" : "Invitation published successfully!");
 
       if (!isEditing && data.invitation?.id) {
         router.push(`/admin/invitations/${data.invitation.id}/edit`);
       } else {
         router.refresh();
       }
+      return true;
     } catch (err: any) {
       alert(err.message || "Failed to save invitation.");
+      return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleOpenLiveLink = async () => {
+    const success = await handleSave("PUBLISHED");
+    if (success) {
+      const slug = formData.slug || "wedding";
+      window.open(`/invite/${slug}`, "_blank");
     }
   };
 
@@ -1411,12 +1423,61 @@ export default function InvitationBuilderWizard({
               </div>
             </div>
 
+            {/* Action Buttons: Publish Live & Open */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1A2338] to-[#121927] border border-amber-500/30 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-serif font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Ready To Publish & Share?</span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Save all information to the platform and generate your live public invitation link.
+                  </p>
+                </div>
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                  formData.status === "PUBLISHED"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                }`}>
+                  Status: {formData.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleSave("PUBLISHED")}
+                  disabled={saving}
+                  className="py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-serif font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{saving ? "Publishing Wedding..." : "Save & Publish Invitation"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenLiveLink}
+                  disabled={saving}
+                  className="py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 font-serif font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-950/40 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>{saving ? "Please wait..." : "Publish & Open Invitation"}</span>
+                </button>
+              </div>
+            </div>
+
             {/* Quick Share Buttons */}
             {formData.slug && (
               <div className="p-5 rounded-2xl bg-gray-900 border border-gray-800 space-y-4">
-                <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-                  Live Public URL Preview
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                    Live Public URL Preview
+                  </h4>
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    /invite/{formData.slug}
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -1431,19 +1492,20 @@ export default function InvitationBuilderWizard({
                       navigator.clipboard.writeText(`${origin}/invite/${formData.slug}`);
                       showToast("Copied invitation URL to clipboard!");
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copy</span>
+                    <span>Copy Link</span>
                   </button>
-                  <a
-                    href={`/invite/${formData.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs flex items-center justify-center transition-colors"
+                  <button
+                    type="button"
+                    onClick={handleOpenLiveLink}
+                    disabled={saving}
+                    className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-xs flex items-center justify-center transition-colors cursor-pointer"
+                    title="Open live invitation"
                   >
                     <ExternalLink className="w-4 h-4" />
-                  </a>
+                  </button>
                 </div>
               </div>
             )}

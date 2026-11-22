@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+import { invitationStore } from "@/lib/invitationStore";
 
 export const dynamic = "force-dynamic";
 
@@ -28,15 +29,28 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const updated = await prisma.invitation.update({
-      where: { id: params.id },
-      data: { status },
-      include: { couple: true },
-    });
+    // Update backup store
+    const storeItem = invitationStore.getInvitationById(params.id);
+    if (storeItem) {
+      storeItem.status = status as any;
+      invitationStore.saveInvitation(storeItem);
+    }
+
+    let updatedStatus = status;
+    try {
+      const updated = await prisma.invitation.update({
+        where: { id: params.id },
+        data: { status },
+        include: { couple: true },
+      });
+      updatedStatus = updated.status;
+    } catch (dbErr) {
+      console.warn("DB publish status update skipped/failed:", dbErr);
+    }
 
     return NextResponse.json({
       success: true,
-      status: updated.status,
+      status: updatedStatus,
       message: `Invitation status updated to ${status}`,
     });
   } catch (error: any) {

@@ -100,7 +100,7 @@ export interface InvitationWithRelations {
     message: string | null;
     createdAt: Date | string;
   }>;
-  settings: Array<{
+  settings?: Array<{
     id: string;
     section: string;
     key: string;

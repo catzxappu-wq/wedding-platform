@@ -1,5 +1,6 @@
 import React from "react";
 import prisma from "@/lib/prisma";
+import { invitationStore } from "@/lib/invitationStore";
 import Link from "next/link";
 import { PlusCircle, Sparkles, Mail } from "lucide-react";
 import InvitationsTable from "@/components/admin/InvitationsTable";
@@ -21,6 +22,15 @@ export default async function AdminInvitationsPage() {
     });
   } catch (err) {
     console.warn("Database not accessible on invitations page:", err);
+  }
+
+  // Merge with backup store
+  const storeInvs = invitationStore.getAllInvitations();
+  const existingSlugs = new Set(invitations.map((i) => i.slug.toLowerCase()));
+  for (const item of storeInvs) {
+    if (!existingSlugs.has(item.slug.toLowerCase())) {
+      invitations.push(item);
+    }
   }
 
   return (

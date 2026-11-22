@@ -1,7 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { invitationStore } from "@/lib/invitationStore";
 import { InvitationWithRelations } from "@/types";
 import InvitationExperience from "@/components/public/InvitationExperience";
 import { AlertCircle, Lock, Heart, ArrowLeft } from "lucide-react";
@@ -16,11 +16,16 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const cleanSlug = (params.slug || "").toLowerCase().trim();
   try {
-    const invitation = await prisma.invitation.findUnique({
-      where: { slug: params.slug },
+    let invitation: any = await prisma.invitation.findUnique({
+      where: { slug: cleanSlug },
       include: { couple: true, gallery: true },
     });
+
+    if (!invitation) {
+      invitation = invitationStore.getInvitationBySlug(cleanSlug);
+    }
 
     if (!invitation) {
       return {
@@ -73,10 +78,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublicInvitationPage({ params }: PageProps) {
+  const cleanSlug = (params.slug || "").toLowerCase().trim();
   let rawInvitation: any = null;
+
   try {
     rawInvitation = await prisma.invitation.findUnique({
-      where: { slug: params.slug },
+      where: { slug: cleanSlug },
       include: {
         couple: true,
         venue: true,
@@ -88,7 +95,12 @@ export default async function PublicInvitationPage({ params }: PageProps) {
       },
     });
   } catch (err) {
-    console.warn("Failed to fetch invitation from database:", err);
+    console.warn("Database lookup skipped/failed (will check backup store):", err);
+  }
+
+  // Fallback to in-memory/backup store if not found in DB
+  if (!rawInvitation) {
+    rawInvitation = invitationStore.getInvitationBySlug(cleanSlug);
   }
 
   // 1. Not Found Page
@@ -103,7 +115,7 @@ export default async function PublicInvitationPage({ params }: PageProps) {
             Invitation Not Found
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
-            We couldn't find a wedding invitation at <code className="bg-gray-100 px-2 py-0.5 rounded text-amber-800">/invite/{params.slug}</code>. Please verify the link or contact the host.
+            We couldn't find a wedding invitation at <code className="bg-gray-100 px-2 py-0.5 rounded text-amber-800">/invite/{cleanSlug}</code>. Please verify the link or contact the host.
           </p>
           <div className="pt-2">
             <Link
@@ -120,19 +132,26 @@ export default async function PublicInvitationPage({ params }: PageProps) {
   }
 
   // Cast raw invitation with serialized dates for client component
+  const toDateStr = (val: any) => {
+    if (!val) return null;
+    if (typeof val === "string") return val;
+    if (val instanceof Date) return val.toISOString();
+    return new Date(val).toISOString();
+  };
+
   const invitation: InvitationWithRelations = {
     ...rawInvitation,
     status: rawInvitation.status as any,
-    weddingDate: rawInvitation.weddingDate ? rawInvitation.weddingDate.toISOString() : null,
-    createdAt: rawInvitation.createdAt.toISOString(),
-    updatedAt: rawInvitation.updatedAt.toISOString(),
-    events: rawInvitation.events.map((e: any) => ({
+    weddingDate: toDateStr(rawInvitation.weddingDate),
+    createdAt: toDateStr(rawInvitation.createdAt) || new Date().toISOString(),
+    updatedAt: toDateStr(rawInvitation.updatedAt) || new Date().toISOString(),
+    events: (rawInvitation.events || []).map((e: any) => ({
       ...e,
-      date: typeof e.date === "string" ? e.date : e.date.toISOString(),
+      date: toDateStr(e.date) || new Date().toISOString(),
     })),
-    rsvps: rawInvitation.rsvps.map((r: any) => ({
+    rsvps: (rawInvitation.rsvps || []).map((r: any) => ({
       ...r,
-      createdAt: typeof r.createdAt === "string" ? r.createdAt : r.createdAt.toISOString(),
+      createdAt: toDateStr(r.createdAt) || new Date().toISOString(),
     })),
   };
 

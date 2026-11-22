@@ -1,5 +1,6 @@
 import React from "react";
 import prisma from "@/lib/prisma";
+import { invitationStore } from "@/lib/invitationStore";
 import Link from "next/link";
 import {
   Mail,
@@ -47,6 +48,20 @@ export default async function AdminDashboardPage() {
     recentInvitations = res[4];
   } catch (err) {
     console.warn("Database not accessible on dashboard load:", err);
+  }
+
+  // Fallback to backup store if DB was offline or empty
+  if (recentInvitations.length === 0) {
+    const storeInvs = invitationStore.getAllInvitations();
+    recentInvitations = storeInvs;
+    totalInvs = storeInvs.length;
+    publishedCount = storeInvs.filter((i) => i.status === "PUBLISHED").length;
+    draftCount = storeInvs.filter((i) => i.status === "DRAFT").length;
+    for (const inv of storeInvs) {
+      if (inv.rsvps?.length) {
+        rsvps.push(...inv.rsvps);
+      }
+    }
   }
 
   const totalRsvpResponses = rsvps.length;

@@ -11,3 +11,4 @@ yarn-error.log*
 .env
 dev.db
 dev.db-journal
+*.tsbuildinfo
