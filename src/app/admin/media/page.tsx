@@ -1,10 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
-import { Image as ImageIcon, Upload, Copy, Check, Trash2, Plus, Sparkles, ExternalLink } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Image as ImageIcon, Upload, Copy, Check, Trash2, Plus, Sparkles, ExternalLink, Loader2 } from "lucide-react";
+import { compressImage } from "@/lib/imageCompression";
+
+interface MediaItem {
+  id: string;
+  url: string;
+  title: string;
+  category: string;
+  size: string;
+}
 
 export default function AdminMediaPage() {
-  const [photos, setPhotos] = useState([
+  const [photos, setPhotos] = useState<MediaItem[]>([
     {
       id: "1",
       url: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
@@ -50,8 +59,9 @@ export default function AdminMediaPage() {
   ]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [newUrl, setNewUrl] = useState("");
-  const [newTitle, setNewTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleCopy = (id: string, url: string) => {
     navigator.clipboard.writeText(url);
@@ -59,21 +69,37 @@ export default function AdminMediaPage() {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleAddMedia = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUrl) return;
+  const handleProcessFiles = async (files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
+    setLoading(true);
 
-    const item = {
-      id: String(Date.now()),
-      url: newUrl,
-      title: newTitle || "Uploaded Wedding Asset",
-      category: "Custom",
-      size: "Web CDN",
-    };
+    try {
+      const newItems: MediaItem[] = [];
 
-    setPhotos([item, ...photos]);
-    setNewUrl("");
-    setNewTitle("");
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith("image/")) {
+          const optimizedUrl = await compressImage(file);
+          const sizeKb = Math.round(file.size / 1024);
+          const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+
+          newItems.push({
+            id: String(Date.now() + i),
+            url: optimizedUrl,
+            title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+            category: "Uploaded",
+            size: sizeStr,
+          });
+        }
+      }
+
+      setPhotos([...newItems, ...photos]);
+    } catch (err: any) {
+      alert("Error reading images from storage: " + err.message);
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -85,41 +111,68 @@ export default function AdminMediaPage() {
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">
           <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-          <span>Cloud Media Vault</span>
+          <span>Device Storage Vault</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-serif text-white font-bold">
-          Wedding Media Assets
+          Upload Photos From Storage
         </h1>
         <p className="text-xs sm:text-sm text-gray-400">
-          Upload and manage photos, couple portraits, ceremony backdrops, and gallery assets.
+          Select or drag-and-drop pictures directly from your computer or phone storage.
         </p>
       </div>
 
-      {/* Add Media Bar */}
-      <form onSubmit={handleAddMedia} className="p-4 rounded-3xl bg-[#111726] border border-gray-800 flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Paste Image URL (Unsplash, Cloudinary, AWS S3, etc.)..."
-          value={newUrl}
-          onChange={(e) => setNewUrl(e.target.value)}
-          required
-          className="flex-1 px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-xs outline-none focus:border-amber-400"
-        />
-        <input
-          type="text"
-          placeholder="Title / Description (optional)"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          className="w-full sm:w-60 px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-xs outline-none focus:border-amber-400"
-        />
-        <button
-          type="submit"
-          className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 font-semibold text-xs flex items-center justify-center gap-2 transition-colors shrink-0 cursor-pointer shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Media</span>
-        </button>
-      </form>
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={(e) => e.target.files && handleProcessFiles(e.target.files)}
+        className="hidden"
+      />
+
+      {/* Direct Storage Upload Zone */}
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (e.dataTransfer.files) handleProcessFiles(e.dataTransfer.files);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        className={`rounded-3xl border-2 border-dashed p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 ${
+          isDragging
+            ? "border-amber-400 bg-amber-500/15 scale-[1.01]"
+            : "border-gray-700 bg-gray-900/60 hover:border-amber-500/50 hover:bg-gray-900"
+        }`}
+      >
+        {loading ? (
+          <div className="flex flex-col items-center gap-2 text-amber-400 py-3">
+            <Loader2 className="w-9 h-9 animate-spin" />
+            <span className="text-sm font-semibold">Reading and compressing images from storage...</span>
+          </div>
+        ) : (
+          <>
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Upload className="w-7 h-7" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                Click to choose photos from your device storage
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                or drag & drop files here directly from your folder
+              </p>
+            </div>
+            <span className="text-[11px] text-gray-400 px-3 py-1 rounded-full bg-gray-800 border border-gray-700">
+              Multiple files supported • Instant preview • Auto-compressed for web
+            </span>
+          </>
+        )}
+      </div>
 
       {/* Grid of Media */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -156,29 +209,21 @@ export default function AdminMediaPage() {
                   {copiedId === photo.id ? (
                     <>
                       <Check className="w-3 h-3 text-green-400" />
-                      <span>Copied URL</span>
+                      <span>Copied</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3 h-3" />
-                      <span>Copy URL</span>
+                      <span>Copy</span>
                     </>
                   )}
                 </button>
-
-                <a
-                  href={photo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
 
                 <button
                   type="button"
                   onClick={() => handleDelete(photo.id)}
                   className="p-1.5 rounded-lg bg-gray-900 hover:bg-red-950 text-red-400 hover:text-red-300"
+                  title="Delete"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

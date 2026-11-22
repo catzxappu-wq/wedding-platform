@@ -31,7 +31,7 @@ export function verifyToken(token: string): UserSession | null {
   }
 }
 
-export async function setAdminSession(user: { id: string; email: string; name: string; role: string }) {
+export async function setAdminSession(user: { id: string; email: string; name: string; role: string }): Promise<string> {
   const token = createToken({
     id: user.id,
     email: user.email,
@@ -39,14 +39,20 @@ export async function setAdminSession(user: { id: string; email: string; name: s
     role: user.role,
   });
 
-  const cookieStore = cookies();
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
+  try {
+    const cookieStore = cookies();
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+  } catch (e) {
+    // In environments where cookies() cannot set headers, fallback to response cookies
+  }
+
+  return token;
 }
 
 export async function getAdminSession(): Promise<UserSession | null> {
@@ -68,7 +74,7 @@ export async function clearAdminSession() {
 export async function authenticateAdmin(
   email: string,
   password: string
-): Promise<{ success: boolean; error?: string; user?: UserSession }> {
+): Promise<{ success: boolean; error?: string; user?: UserSession; token?: string }> {
   const cleanEmail = email.toLowerCase().trim();
   const isDefaultCredentials =
     cleanEmail === DEFAULT_ADMIN_EMAIL && password === DEFAULT_ADMIN_PASSWORD;
@@ -108,8 +114,8 @@ export async function authenticateAdmin(
         role: user.role,
       };
 
-      await setAdminSession(sessionUser);
-      return { success: true, user: sessionUser };
+      const token = await setAdminSession(sessionUser);
+      return { success: true, user: sessionUser, token };
     }
 
     // If user record wasn't found or DB is empty but credentials match default
@@ -120,8 +126,8 @@ export async function authenticateAdmin(
         name: "Platform Administrator",
         role: "ADMIN",
       };
-      await setAdminSession(fallbackUser);
-      return { success: true, user: fallbackUser };
+      const token = await setAdminSession(fallbackUser);
+      return { success: true, user: fallbackUser, token };
     }
 
     return { success: false, error: "Invalid email or password" };
@@ -138,8 +144,8 @@ export async function authenticateAdmin(
         name: "Platform Administrator",
         role: "ADMIN",
       };
-      await setAdminSession(fallbackUser);
-      return { success: true, user: fallbackUser };
+      const token = await setAdminSession(fallbackUser);
+      return { success: true, user: fallbackUser, token };
     }
 
     return {

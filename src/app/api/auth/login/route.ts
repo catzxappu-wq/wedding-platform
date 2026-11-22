@@ -17,22 +17,34 @@ export async function POST(request: Request) {
 
     const result = await authenticateAdmin(email, password);
 
-    if (!result.success) {
+    if (!result.success || !result.user) {
       return NextResponse.json(
         { error: result.error || "Invalid email or password" },
         { status: 401 }
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: result.user,
       message: "Logged in successfully",
     });
+
+    if (result.token) {
+      response.cookies.set("wedding_admin_token", result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Login API error:", error);
     return NextResponse.json(
-      { error: error?.message || "An unexpected error occurred during login" },
+      { error: error?.message || "Invalid credentials or authentication failure" },
       { status: 500 }
     );
   }

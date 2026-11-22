@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Heart,
@@ -25,10 +25,14 @@ import {
   Tablet,
   Monitor,
   Sparkles,
+  Upload,
+  Volume2,
 } from "lucide-react";
 import { TEMPLATES, getTemplateById } from "@/data/templates";
 import { slugify } from "@/lib/utils";
 import InvitationExperience from "@/components/public/InvitationExperience";
+import ImageUploader from "@/components/admin/ImageUploader";
+import MultiImageUploader from "@/components/admin/MultiImageUploader";
 
 interface WizardProps {
   initialData?: any;
@@ -46,6 +50,53 @@ export default function InvitationBuilderWizard({
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("mobile");
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+
+  const musicPresets = [
+    {
+      title: "Royal Indian Shehnai & Sitar Harmony",
+      url: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=indian-flute-and-sitar-10492.mp3",
+      tag: "Classical Indian",
+    },
+    {
+      title: "Acoustic Wedding Love Serenade",
+      url: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=romantic-wedding-19124.mp3",
+      tag: "Romantic Guitar",
+    },
+    {
+      title: "Majestic Orchestral Golden Strings",
+      url: "https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=orchestral-strings-warm-124446.mp3",
+      tag: "Cinematic Grandeur",
+    },
+    {
+      title: "Gentle Piano & Cello Melody",
+      url: "https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=tender-piano-strings-10022.mp3",
+      tag: "Minimal Elegance",
+    },
+  ];
+
+  const handleAudioUploadFromStorage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert("Selected audio file is larger than 15MB. Please choose a smaller MP3 or audio file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setFormData((prev) => ({
+          ...prev,
+          musicUrl: reader.result as string,
+          musicTitle: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+          musicEnabled: true,
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -397,56 +448,47 @@ export default function InvitationBuilderWizard({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Groom Photo URL
-              </label>
-              <input
-                type="text"
-                placeholder="https://images.unsplash.com/..."
+              <ImageUploader
+                label="Groom Portrait"
                 value={formData.couple.groomPhoto}
-                onChange={(e) =>
+                onChange={(dataUrl) =>
                   setFormData({
                     ...formData,
-                    couple: { ...formData.couple, groomPhoto: e.target.value },
+                    couple: { ...formData.couple, groomPhoto: dataUrl },
                   })
                 }
-                className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm focus:border-amber-400 outline-none"
+                aspectRatio="square"
+                placeholderText="Upload Groom photo from storage"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Bride Photo URL
-              </label>
-              <input
-                type="text"
-                placeholder="https://images.unsplash.com/..."
+              <ImageUploader
+                label="Bride Portrait"
                 value={formData.couple.bridePhoto}
-                onChange={(e) =>
+                onChange={(dataUrl) =>
                   setFormData({
                     ...formData,
-                    couple: { ...formData.couple, bridePhoto: e.target.value },
+                    couple: { ...formData.couple, bridePhoto: dataUrl },
                   })
                 }
-                className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm focus:border-amber-400 outline-none"
+                aspectRatio="square"
+                placeholderText="Upload Bride photo from storage"
               />
             </div>
 
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Couple Photo URL (Featured Cover)
-              </label>
-              <input
-                type="text"
-                placeholder="https://images.unsplash.com/..."
+              <ImageUploader
+                label="Couple Featured Cover Photo"
                 value={formData.couple.couplePhoto}
-                onChange={(e) =>
+                onChange={(dataUrl) =>
                   setFormData({
                     ...formData,
-                    couple: { ...formData.couple, couplePhoto: e.target.value },
+                    couple: { ...formData.couple, couplePhoto: dataUrl },
                   })
                 }
-                className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm focus:border-amber-400 outline-none"
+                aspectRatio="video"
+                placeholderText="Upload Couple Cover photo from storage"
               />
             </div>
 
@@ -730,6 +772,20 @@ export default function InvitationBuilderWizard({
                       className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-xs outline-none focus:border-amber-400"
                     />
                   </div>
+
+                  <div className="sm:col-span-3 pt-2">
+                    <ImageUploader
+                      label="Event Ceremony Photo (Optional)"
+                      value={ev.imageUrl}
+                      onChange={(dataUrl) => {
+                        const updated = [...formData.events];
+                        updated[index].imageUrl = dataUrl;
+                        setFormData({ ...formData, events: updated });
+                      }}
+                      aspectRatio="landscape"
+                      placeholderText="Upload ceremony photo from device storage"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -838,135 +894,165 @@ export default function InvitationBuilderWizard({
       {/* STEP 5: GALLERY */}
       {step === 5 && (
         <div className="rounded-3xl bg-[#111726] border border-gray-800 p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-                <Camera className="w-4 h-4 text-amber-400" />
-                <span>Photo Gallery & Memories</span>
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                Manage wedding photography showcase with captions and cover photo flags.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                const newPhoto = {
-                  imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
-                  caption: "A joyful memory",
-                  isCover: false,
-                  sortOrder: formData.gallery.length + 1,
-                };
-                setFormData({ ...formData, gallery: [...formData.gallery, newPhoto] });
-              }}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-amber-500/30 transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Photo</span>
-            </button>
+          <div>
+            <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
+              <Camera className="w-4 h-4 text-amber-400" />
+              <span>Photo Gallery & Memories (Upload Directly From Storage)</span>
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">
+              Select or drag and drop multiple wedding photos directly from your computer or phone storage. Images are automatically optimized for instant mobile loading.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {formData.gallery.map((photo: any, idx: number) => (
-              <div
-                key={idx}
-                className="p-4 rounded-2xl bg-gray-900 border border-gray-800 flex gap-4 items-start"
-              >
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-800 shrink-0">
-                  <img src={photo.imageUrl} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Image URL"
-                    value={photo.imageUrl}
-                    onChange={(e) => {
-                      const updated = [...formData.gallery];
-                      updated[idx].imageUrl = e.target.value;
-                      setFormData({ ...formData, gallery: updated });
-                    }}
-                    className="w-full px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-xs"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Caption (e.g. Pre-wedding sunset)"
-                    value={photo.caption || ""}
-                    onChange={(e) => {
-                      const updated = [...formData.gallery];
-                      updated[idx].caption = e.target.value;
-                      setFormData({ ...formData, gallery: updated });
-                    }}
-                    className="w-full px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-xs"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = formData.gallery.filter((_: any, i: number) => i !== idx);
-                    setFormData({ ...formData, gallery: updated });
-                  }}
-                  className="p-1 text-red-400 hover:text-red-300"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+          <MultiImageUploader
+            photos={formData.gallery}
+            onChange={(photos) => setFormData({ ...formData, gallery: photos })}
+          />
         </div>
       )}
 
       {/* STEP 6: MUSIC */}
       {step === 6 && (
         <div className="rounded-3xl bg-[#111726] border border-gray-800 p-6 sm:p-8 shadow-xl space-y-6">
-          <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-            <Music className="w-4 h-4 text-amber-400" />
-            <span>Background Wedding Music</span>
-          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
+                <Music className="w-4 h-4 text-amber-400" />
+                <span>Background Wedding Soundtrack</span>
+              </h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Set mood music that plays gently when guests click the music player on the invitation.
+              </p>
+            </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="musicToggle"
                 checked={formData.musicEnabled}
                 onChange={(e) => setFormData({ ...formData, musicEnabled: e.target.checked })}
-                className="w-4 h-4 text-amber-500 rounded border-gray-700"
+                className="w-4 h-4 text-amber-500 rounded border-gray-700 cursor-pointer"
               />
-              <label htmlFor="musicToggle" className="text-sm font-medium text-white cursor-pointer">
-                Enable background music on public invitation
+              <label htmlFor="musicToggle" className="text-xs font-semibold text-gray-200 cursor-pointer">
+                Enable Music
               </label>
             </div>
+          </div>
 
-            {formData.musicEnabled && (
+          {formData.musicEnabled && (
+            <div className="space-y-6 pt-2">
+              {/* Option A: Upload from Device Storage */}
+              <div className="p-5 rounded-2xl bg-gray-900 border border-gray-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-semibold text-white uppercase tracking-wider">
+                      Upload Audio File From Storage
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
+                    MP3, WAV, OGG, M4A up to 15MB
+                  </span>
+                </div>
+
+                <input
+                  type="file"
+                  ref={audioInputRef}
+                  accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg,audio/m4a"
+                  onChange={handleAudioUploadFromStorage}
+                  className="hidden"
+                />
+
+                <div
+                  onClick={() => audioInputRef.current?.click()}
+                  className="p-6 rounded-xl border-2 border-dashed border-gray-700 hover:border-amber-500/60 bg-gray-950/40 hover:bg-amber-500/5 transition-all cursor-pointer text-center group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                    <Volume2 className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-medium text-gray-200">
+                    Click to select audio soundtrack from your computer or phone
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Direct storage upload - no external hosting required
+                  </p>
+                </div>
+              </div>
+
+              {/* Option B: Preset Wedding Melodies */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider block">
+                  Or Choose A Royalty-Free Wedding Theme Preset
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {musicPresets.map((preset, idx) => {
+                    const isSelected = formData.musicUrl === preset.url;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            musicUrl: preset.url,
+                            musicTitle: preset.title,
+                            musicEnabled: true,
+                          });
+                        }}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                          isSelected
+                            ? "border-amber-400 bg-amber-500/10 text-white"
+                            : "border-gray-800 bg-gray-900/60 hover:border-gray-700 text-gray-300"
+                        }`}
+                      >
+                        <div className="space-y-0.5 pr-2">
+                          <p className="text-xs font-semibold text-white">{preset.title}</p>
+                          <span className="text-[10px] text-amber-400/80">{preset.tag}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-amber-500 text-amber-950 flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Currently Configured Audio & Player */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                    Music Title / Display Name
+                    Track Display Title
                   </label>
                   <input
                     type="text"
                     value={formData.musicTitle}
                     onChange={(e) => setFormData({ ...formData, musicTitle: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm focus:border-amber-400 outline-none"
+                    placeholder="e.g. Royal Wedding Symphony"
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-xs focus:border-amber-400 outline-none"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                    Audio File URL (.mp3 or .ogg)
+                    Audio Source Preview
                   </label>
-                  <input
-                    type="text"
-                    placeholder="https://.../music.mp3"
-                    value={formData.musicUrl}
-                    onChange={(e) => setFormData({ ...formData, musicUrl: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm focus:border-amber-400 outline-none"
-                  />
+                  {formData.musicUrl ? (
+                    <audio
+                      src={formData.musicUrl}
+                      controls
+                      className="w-full h-[38px] rounded-xl bg-gray-900"
+                    />
+                  ) : (
+                    <div className="h-[38px] px-3 rounded-xl bg-gray-900 border border-gray-800 text-gray-500 text-xs flex items-center">
+                      No soundtrack loaded yet
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
