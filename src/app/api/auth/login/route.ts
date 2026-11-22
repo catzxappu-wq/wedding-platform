@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || "Authentication failed" },
+        { error: result.error || "Invalid email or password" },
         { status: 401 }
       );
     }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Login API error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred during login" },
+      { error: error?.message || "An unexpected error occurred during login" },
       { status: 500 }
     );
   }

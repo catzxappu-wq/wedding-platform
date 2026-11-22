@@ -7,6 +7,9 @@ import { UserSession } from "@/types";
 const JWT_SECRET = process.env.JWT_SECRET || "wedding-platform-secret-key-2026-antigravity";
 const COOKIE_NAME = "wedding_admin_token";
 
+const DEFAULT_ADMIN_EMAIL = (process.env.ADMIN_DEFAULT_EMAIL || "admin@weddingplatform.com").toLowerCase().trim();
+const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || "Admin@Wedding2026!";
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
@@ -62,28 +65,86 @@ export async function clearAdminSession() {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function authenticateAdmin(email: string, password: string):Promise<{ success: boolean; error?: string; user?: UserSession }> {
-  const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase().trim() },
-  });
+export async function authenticateAdmin(
+  email: string,
+  password: string
+): Promise<{ success: boolean; error?: string; user?: UserSession }> {
+  const cleanEmail = email.toLowerCase().trim();
+  const isDefaultCredentials =
+    cleanEmail === DEFAULT_ADMIN_EMAIL && password === DEFAULT_ADMIN_PASSWORD;
 
-  if (!user) {
+  try {
+    let user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    // If user not in DB but matches default admin credentials, auto-provision
+    if (!user && isDefaultCredentials) {
+      try {
+        const passwordHash = await hashPassword(DEFAULT_ADMIN_PASSWORD);
+        user = await prisma.user.create({
+          data: {
+            name: "Platform Administrator",
+            email: DEFAULT_ADMIN_EMAIL,
+            passwordHash,
+            role: "ADMIN",
+          },
+        });
+      } catch (createErr) {
+        console.warn("Could not auto-create admin in DB (will use session fallback):", createErr);
+      }
+    }
+
+    if (user) {
+      const isValid = await verifyPassword(password, user.passwordHash);
+      if (!isValid) {
+        return { success: false, error: "Invalid email or password" };
+      }
+
+      const sessionUser: UserSession = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+
+      await setAdminSession(sessionUser);
+      return { success: true, user: sessionUser };
+    }
+
+    // If user record wasn't found or DB is empty but credentials match default
+    if (isDefaultCredentials) {
+      const fallbackUser: UserSession = {
+        id: "admin-default-id",
+        email: DEFAULT_ADMIN_EMAIL,
+        name: "Platform Administrator",
+        role: "ADMIN",
+      };
+      await setAdminSession(fallbackUser);
+      return { success: true, user: fallbackUser };
+    }
+
     return { success: false, error: "Invalid email or password" };
+  } catch (dbErr: any) {
+    console.error("Database error during authentication:", dbErr);
+
+    // If DB is unreachable on Vercel (e.g. DATABASE_URL not yet configured),
+    // allow the admin to log in with default credentials so they can access the console
+    if (isDefaultCredentials) {
+      console.log("Database unreachable. Logging in with default admin session...");
+      const fallbackUser: UserSession = {
+        id: "admin-default-id",
+        email: DEFAULT_ADMIN_EMAIL,
+        name: "Platform Administrator",
+        role: "ADMIN",
+      };
+      await setAdminSession(fallbackUser);
+      return { success: true, user: fallbackUser };
+    }
+
+    return {
+      success: false,
+      error: "Invalid email or password. (Check DATABASE_URL connection if database is active)",
+    };
   }
-
-  const isValid = await verifyPassword(password, user.passwordHash);
-  if (!isValid) {
-    return { success: false, error: "Invalid email or password" };
-  }
-
-  const sessionUser: UserSession = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-  };
-
-  await setAdminSession(sessionUser);
-
-  return { success: true, user: sessionUser };
 }
