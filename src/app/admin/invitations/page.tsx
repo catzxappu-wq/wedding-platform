@@ -4,18 +4,24 @@ import Link from "next/link";
 import { PlusCircle, Sparkles, Mail } from "lucide-react";
 import InvitationsTable from "@/components/admin/InvitationsTable";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminInvitationsPage() {
-  const invitations = await prisma.invitation.findMany({
-    include: {
-      couple: true,
-      template: true,
-      events: true,
-      rsvps: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let invitations: any[] = [];
+  try {
+    invitations = await prisma.invitation.findMany({
+      include: {
+        couple: true,
+        template: true,
+        events: true,
+        rsvps: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.warn("Database not accessible on invitations page:", err);
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

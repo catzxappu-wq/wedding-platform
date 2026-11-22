@@ -13,26 +13,41 @@ import {
 } from "lucide-react";
 import InvitationsTable from "@/components/admin/InvitationsTable";
 
-export const revalidate = 0; // Always fresh database state
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminDashboardPage() {
-  // Fetch stats and invitations
-  const [totalInvs, publishedCount, draftCount, rsvps, recentInvitations] = await Promise.all([
-    prisma.invitation.count(),
-    prisma.invitation.count({ where: { status: "PUBLISHED" } }),
-    prisma.invitation.count({ where: { status: "DRAFT" } }),
-    prisma.rsvp.findMany({ select: { guestsCount: true, attending: true } }),
-    prisma.invitation.findMany({
-      include: {
-        couple: true,
-        template: true,
-        events: true,
-        rsvps: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-  ]);
+  let totalInvs = 0;
+  let publishedCount = 0;
+  let draftCount = 0;
+  let rsvps: any[] = [];
+  let recentInvitations: any[] = [];
+
+  try {
+    const res = await Promise.all([
+      prisma.invitation.count(),
+      prisma.invitation.count({ where: { status: "PUBLISHED" } }),
+      prisma.invitation.count({ where: { status: "DRAFT" } }),
+      prisma.rsvp.findMany({ select: { guestsCount: true, attending: true } }),
+      prisma.invitation.findMany({
+        include: {
+          couple: true,
+          template: true,
+          events: true,
+          rsvps: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
+    totalInvs = res[0];
+    publishedCount = res[1];
+    draftCount = res[2];
+    rsvps = res[3];
+    recentInvitations = res[4];
+  } catch (err) {
+    console.warn("Database not accessible on dashboard load:", err);
+  }
 
   const totalRsvpResponses = rsvps.length;
   const totalAttendingGuests = rsvps

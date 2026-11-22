@@ -7,6 +7,8 @@ import InvitationExperience from "@/components/public/InvitationExperience";
 import { AlertCircle, Lock, Heart, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: {
     slug: string;
@@ -14,68 +16,80 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const invitation = await prisma.invitation.findUnique({
-    where: { slug: params.slug },
-    include: { couple: true, gallery: true },
-  });
+  try {
+    const invitation = await prisma.invitation.findUnique({
+      where: { slug: params.slug },
+      include: { couple: true, gallery: true },
+    });
 
-  if (!invitation) {
+    if (!invitation) {
+      return {
+        title: "Wedding Invitation Not Found",
+        description: "The requested wedding invitation could not be found.",
+      };
+    }
+
+    const groom = invitation.couple?.groomName || "Groom";
+    const bride = invitation.couple?.brideName || "Bride";
+    const title = `${groom} & ${bride} | Wedding Invitation`;
+    const description =
+      invitation.couple?.introduction ||
+      `Join ${groom} and ${bride} as they celebrate their joyous wedding celebration.`;
+
+    const coverImage =
+      invitation.couple?.couplePhoto ||
+      invitation.gallery?.[0]?.imageUrl ||
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80";
+
     return {
-      title: "Wedding Invitation Not Found",
-      description: "The requested wedding invitation could not be found.",
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [
+          {
+            url: coverImage,
+            width: 1200,
+            height: 630,
+            alt: `${groom} & ${bride} Wedding`,
+          },
+        ],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [coverImage],
+      },
+    };
+  } catch {
+    return {
+      title: "Wedding Invitation",
+      description: "ForeverYours Wedding Celebration",
     };
   }
-
-  const groom = invitation.couple?.groomName || "Groom";
-  const bride = invitation.couple?.brideName || "Bride";
-  const title = `${groom} & ${bride} | Wedding Invitation`;
-  const description =
-    invitation.couple?.introduction ||
-    `Join ${groom} and ${bride} as they celebrate their joyous wedding celebration.`;
-
-  const coverImage =
-    invitation.couple?.couplePhoto ||
-    invitation.gallery?.[0]?.imageUrl ||
-    "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80";
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: [
-        {
-          url: coverImage,
-          width: 1200,
-          height: 630,
-          alt: `${groom} & ${bride} Wedding`,
-        },
-      ],
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [coverImage],
-    },
-  };
 }
 
 export default async function PublicInvitationPage({ params }: PageProps) {
-  const rawInvitation = await prisma.invitation.findUnique({
-    where: { slug: params.slug },
-    include: {
-      couple: true,
-      venue: true,
-      events: { orderBy: { sortOrder: "asc" } },
-      gallery: { orderBy: { sortOrder: "asc" } },
-      rsvps: { orderBy: { createdAt: "desc" } },
-      template: true,
-      settings: true,
-    },
-  });
+  let rawInvitation: any = null;
+  try {
+    rawInvitation = await prisma.invitation.findUnique({
+      where: { slug: params.slug },
+      include: {
+        couple: true,
+        venue: true,
+        events: { orderBy: { sortOrder: "asc" } },
+        gallery: { orderBy: { sortOrder: "asc" } },
+        rsvps: { orderBy: { createdAt: "desc" } },
+        template: true,
+        settings: true,
+      },
+    });
+  } catch (err) {
+    console.warn("Failed to fetch invitation from database:", err);
+  }
 
   // 1. Not Found Page
   if (!rawInvitation) {
@@ -112,13 +126,13 @@ export default async function PublicInvitationPage({ params }: PageProps) {
     weddingDate: rawInvitation.weddingDate ? rawInvitation.weddingDate.toISOString() : null,
     createdAt: rawInvitation.createdAt.toISOString(),
     updatedAt: rawInvitation.updatedAt.toISOString(),
-    events: rawInvitation.events.map((e) => ({
+    events: rawInvitation.events.map((e: any) => ({
       ...e,
-      date: e.date.toISOString(),
+      date: typeof e.date === "string" ? e.date : e.date.toISOString(),
     })),
-    rsvps: rawInvitation.rsvps.map((r) => ({
+    rsvps: rawInvitation.rsvps.map((r: any) => ({
       ...r,
-      createdAt: r.createdAt.toISOString(),
+      createdAt: typeof r.createdAt === "string" ? r.createdAt : r.createdAt.toISOString(),
     })),
   };
 

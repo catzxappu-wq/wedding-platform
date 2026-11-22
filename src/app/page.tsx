@@ -16,18 +16,24 @@ import {
   Lock,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const invitations = await prisma.invitation.findMany({
-    include: {
-      couple: true,
-      template: true,
-      events: true,
-      rsvps: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let invitations: any[] = [];
+  try {
+    invitations = await prisma.invitation.findMany({
+      include: {
+        couple: true,
+        template: true,
+        events: true,
+        rsvps: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.warn("Database not reachable during page load:", err);
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0E17] text-gray-100 flex flex-col justify-between selection:bg-amber-400 selection:text-amber-950">

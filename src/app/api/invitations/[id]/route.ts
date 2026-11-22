@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 interface Params {
   params: {
     id: string;

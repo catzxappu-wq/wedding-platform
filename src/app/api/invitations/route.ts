@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/invitations
 export async function GET(request: Request) {
   try {
