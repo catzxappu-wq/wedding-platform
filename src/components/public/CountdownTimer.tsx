@@ -1,0 +1,92 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { calculateTimeRemaining } from "@/lib/utils";
+import { Clock, Heart } from "lucide-react";
+
+interface CountdownTimerProps {
+  weddingDate: Date | string | null;
+  primaryColor?: string;
+  fontFamily?: string;
+}
+
+export default function CountdownTimer({
+  weddingDate,
+  primaryColor = "#B8972E",
+  fontFamily = "Cinzel",
+}: CountdownTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeRemaining(weddingDate));
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const interval = setInterval(() => {
+      setTimeLeft(calculateTimeRemaining(weddingDate));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [weddingDate]);
+
+  if (!isClient) {
+    return (
+      <div className="w-full max-w-2xl mx-auto py-8">
+        <div className="grid grid-cols-4 gap-3 sm:gap-6 text-center animate-pulse">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 bg-amber-100/40 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (timeLeft.isPast) {
+    return (
+      <div className="w-full max-w-xl mx-auto my-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border border-amber-500/30 text-center">
+        <div className="inline-flex p-3 rounded-full bg-amber-500/20 text-amber-600 mb-3">
+          <Heart className="w-6 h-6 fill-current" />
+        </div>
+        <h3 className="text-xl sm:text-2xl font-serif text-gray-900 font-bold" style={{ fontFamily }}>
+          Happily Ever After
+        </h3>
+        <p className="text-sm text-gray-600 mt-1">
+          The sacred vows have been made! Thank you for blessing our union with your love and presence.
+        </p>
+      </div>
+    );
+  }
+
+  const timeUnits = [
+    { label: "DAYS", value: String(timeLeft.days).padStart(3, "0") },
+    { label: "HOURS", value: String(timeLeft.hours).padStart(2, "0") },
+    { label: "MINUTES", value: String(timeLeft.minutes).padStart(2, "0") },
+    { label: "SECONDS", value: String(timeLeft.seconds).padStart(2, "0") },
+  ];
+
+  return (
+    <div className="w-full max-w-2xl mx-auto my-10">
+      <div className="flex items-center justify-center gap-2 mb-4 text-xs tracking-[0.25em] uppercase text-amber-800 font-medium font-sans">
+        <Clock className="w-3.5 h-3.5 text-amber-600" />
+        <span>Our Big Day Is In</span>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2.5 sm:gap-5">
+        {timeUnits.map((unit, idx) => (
+          <div
+            key={idx}
+            className="flex flex-col items-center justify-center p-3 sm:p-5 rounded-2xl bg-white/80 backdrop-blur-md shadow-md border border-amber-400/30 hover:border-amber-400/60 transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <span
+              className="text-2xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-gray-900"
+              style={{ fontFamily, color: primaryColor }}
+            >
+              {unit.value}
+            </span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase mt-1">
+              {unit.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

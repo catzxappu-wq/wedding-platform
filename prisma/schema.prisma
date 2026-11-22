@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         String       @default("ADMIN") // ADMIN, EDITOR
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  invitations  Invitation[]
+
+  @@map("users")
+}
+
+model Invitation {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  title           String
+  status          String    @default("DRAFT") // DRAFT, PUBLISHED, UNPUBLISHED, ARCHIVED
+  templateId      String    @default("royal-gold")
+  primaryColor    String    @default("#B8972E")
+  secondaryColor  String    @default("#58111A")
+  accentColor     String    @default("#D4AF37")
+  backgroundColor String    @default("#FAF7F2")
+  textColor       String    @default("#1F2937")
+  fontFamily      String    @default("Cinzel")
+  headingFont     String    @default("Cinzel")
+  musicEnabled    Boolean   @default(true)
+  musicUrl        String?
+  musicTitle      String?   @default("Royal Shehnai & Sitar Harmony")
+  weddingDate     DateTime?
+  startTime       String?
+  endTime         String?
+  timeZone        String?   @default("Asia/Kolkata")
+  userId          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  template Template? @relation(fields: [templateId], references: [id])
+  couple   Couple?
+  events   Event[]
+  venue    Venue?
+  gallery  Gallery[]
+  rsvps    Rsvp[]
+  settings Setting[]
+
+  @@map("invitations")
+}
+
+model Couple {
+  id            String  @id @default(uuid())
+  invitationId  String  @unique
+  groomName     String
+  brideName     String
+  groomPhoto    String?
+  bridePhoto    String?
+  couplePhoto   String?
+  introduction  String?
+  story         String?
+  familyMessage String?
+  familyNames   String?
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("couples")
+}
+
+model Event {
+  id           String   @id @default(uuid())
+  invitationId String
+  name         String
+  date         DateTime
+  startTime    String
+  endTime      String?
+  venueName    String
+  address      String
+  description  String?
+  icon         String?  @default("Sparkles")
+  imageUrl     String?
+  sortOrder    Int      @default(0)
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model Venue {
+  id            String  @id @default(uuid())
+  invitationId  String  @unique
+  venueName     String
+  fullAddress   String
+  city          String
+  state         String
+  country       String  @default("India")
+  latitude      Float?
+  longitude     Float?
+  googleMapsUrl String
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("venues")
+}
+
+model Gallery {
+  id           String   @id @default(uuid())
+  invitationId String
+  imageUrl     String
+  caption      String?
+  sortOrder    Int      @default(0)
+  isCover      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("gallery")
+}
+
+model Template {
+  id            String       @id
+  name          String
+  description   String
+  previewImage  String
+  category      String       @default("traditional") // traditional, luxury, modern, floral, regional
+  configuration String // JSON string for template-specific defaults & rules
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  invitations   Invitation[]
+
+  @@map("templates")
+}
+
+model Rsvp {
+  id             String   @id @default(uuid())
+  invitationId   String
+  guestName      String
+  phone          String
+  email          String?
+  guestsCount    Int      @default(1)
+  attending      Boolean  @default(true)
+  foodPreference String   @default("veg") // veg, non-veg, jain, vegan
+  message        String?
+  createdAt      DateTime @default(now())
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("rsvps")
+}
+
+model Setting {
+  id           String @id @default(uuid())
+  invitationId String
+  section      String
+  key          String
+  value        String
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+}
