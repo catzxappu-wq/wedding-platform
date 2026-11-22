@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { invitationStore } from "@/lib/invitationStore";
 import { InvitationWithRelations } from "@/types";
 import InvitationExperience from "@/components/public/InvitationExperience";
+import ClientInvitationHydrator from "@/components/public/ClientInvitationHydrator";
 import { AlertCircle, Lock, Heart, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -103,32 +104,9 @@ export default async function PublicInvitationPage({ params }: PageProps) {
     rawInvitation = invitationStore.getInvitationBySlug(cleanSlug);
   }
 
-  // 1. Not Found Page
+  // Fallback to client-side localStorage hydration if not found in server DB or memory
   if (!rawInvitation) {
-    return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full rounded-3xl bg-white p-8 sm:p-10 shadow-2xl border border-amber-300/40 space-y-5">
-          <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-inner">
-            <AlertCircle className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-serif text-gray-900 font-bold">
-            Invitation Not Found
-          </h1>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            We couldn't find a wedding invitation at <code className="bg-gray-100 px-2 py-0.5 rounded text-amber-800">/invite/{cleanSlug}</code>. Please verify the link or contact the host.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold tracking-wider uppercase transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back To Home</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <ClientInvitationHydrator slug={cleanSlug} />;
   }
 
   // Cast raw invitation with serialized dates for client component

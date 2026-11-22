@@ -1607,7 +1607,7 @@ export default function InvitationBuilderWizard({
                 className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-amber-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-950/40 hover:scale-105 transition-all cursor-pointer"
               >
                 <ExternalLink className="w-4 h-4" />
-                <span>Open Invitation</span>
+                <span>Open Live Link</span>
               </button>
 
               <button
@@ -1615,13 +1615,18 @@ export default function InvitationBuilderWizard({
                 onClick={() => {
                   const url = `${window.location.origin}/invite/${publishedModal.slug}`;
                   navigator.clipboard.writeText(url);
-                  showToast("Invitation URL copied to clipboard!");
+                  showToast("Live invitation link copied!");
                 }}
                 className="flex-1 py-3.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <Copy className="w-4 h-4" />
                 <span>Copy Link</span>
               </button>
+            </div>
+
+            {/* Cloud Database Helper Tip */}
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left text-[11px] text-amber-300/90 leading-relaxed relative z-10">
+              <strong className="text-amber-200">✨ Pro-tip for public guest sharing:</strong> This invitation is cached on this device and opens immediately. For guests on other phones/laptops, connect a free PostgreSQL database in your Vercel Project (Storage → Postgres) so everyone around the world can view and RSVP live!
             </div>
 
             <div className="pt-2 flex items-center justify-center gap-4 text-xs text-gray-400 relative z-10">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -53,6 +53,47 @@ export default function InvitationsTable({ initialInvitations }: InvitationsTabl
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync client-side cached invitations created on this device
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const raw = localStorage.getItem("wedding_invitations_cache");
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (Array.isArray(cached) && cached.length > 0) {
+            setInvitations((prev) => {
+              const existingIds = new Set(prev.map((p) => p.id));
+              const existingSlugs = new Set(prev.map((p) => (p.slug || "").toLowerCase().trim()));
+              const toAdd: InvitationRow[] = [];
+
+              for (const c of cached) {
+                const cSlug = (c.slug || "").toLowerCase().trim();
+                if (!existingIds.has(c.id) && !existingSlugs.has(cSlug)) {
+                  toAdd.push({
+                    id: c.id || `inv-${Date.now()}`,
+                    slug: c.slug,
+                    title: c.title || `${c.couple?.groomName || "Groom"} & ${c.couple?.brideName || "Bride"}'s Wedding`,
+                    status: c.status || "PUBLISHED",
+                    templateId: c.templateId || "royal-gold",
+                    weddingDate: c.weddingDate || null,
+                    createdAt: c.createdAt || new Date().toISOString(),
+                    updatedAt: c.updatedAt || new Date().toISOString(),
+                    couple: c.couple ? { groomName: c.couple.groomName, brideName: c.couple.brideName } : null,
+                    rsvps: c.rsvps || [],
+                  });
+                }
+              }
+
+              return toAdd.length > 0 ? [...toAdd, ...prev] : prev;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not merge cached invitations into table:", e);
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
