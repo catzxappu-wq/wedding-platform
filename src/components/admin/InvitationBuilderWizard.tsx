@@ -50,6 +50,7 @@ export default function InvitationBuilderWizard({
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("mobile");
+  const [publishedModal, setPublishedModal] = useState<{ slug: string; title: string } | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
 
   const musicPresets = [
@@ -274,14 +275,38 @@ export default function InvitationBuilderWizard({
 
       if (!res.ok) throw new Error(data.error || "Save failed");
 
+      const savedSlug = data.invitation?.slug || formData.slug;
       setFormData((prev) => ({ ...prev, status: newStatus }));
       showToast(isEditing ? "Changes saved successfully!" : "Invitation published successfully!");
 
-      if (!isEditing && data.invitation?.id) {
-        router.push(`/admin/invitations/${data.invitation.id}/edit`);
-      } else {
-        router.refresh();
+      // Cache locally in browser storage so the admin never loses created invitations
+      if (typeof window !== "undefined") {
+        try {
+          const cacheKey = "wedding_invitations_cache";
+          const raw = localStorage.getItem(cacheKey);
+          const list = raw ? JSON.parse(raw) : [];
+          const itemToCache = {
+            ...formData,
+            id: data.invitation?.id || invitationId || `inv-${Date.now()}`,
+            slug: savedSlug,
+            status: newStatus,
+          };
+          const filtered = list.filter((x: any) => x.slug !== savedSlug);
+          localStorage.setItem(cacheKey, JSON.stringify([itemToCache, ...filtered]));
+        } catch (cErr) {
+          console.warn("Could not cache to localStorage:", cErr);
+        }
       }
+
+      if (newStatus === "PUBLISHED") {
+        setPublishedModal({
+          slug: savedSlug,
+          title: formData.title || `${formData.couple.groomName || "Groom"} & ${formData.couple.brideName || "Bride"}'s Wedding`,
+        });
+      } else if (!isEditing && data.invitation?.id) {
+        window.history.replaceState(null, "", `/admin/invitations/${data.invitation.id}/edit`);
+      }
+
       return true;
     } catch (err: any) {
       alert(err.message || "Failed to save invitation.");
@@ -292,9 +317,9 @@ export default function InvitationBuilderWizard({
   };
 
   const handleOpenLiveLink = async () => {
+    const slug = formData.slug || "wedding";
     const success = await handleSave("PUBLISHED");
     if (success) {
-      const slug = formData.slug || "wedding";
       window.open(`/invite/${slug}`, "_blank");
     }
   };
@@ -1537,6 +1562,85 @@ export default function InvitationBuilderWizard({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PUBLISHED SUCCESS CELEBRATION MODAL */}
+      {publishedModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="max-w-md w-full rounded-3xl bg-[#161D2E] border border-amber-500/40 p-7 sm:p-9 text-center space-y-6 shadow-2xl relative overflow-hidden">
+            {/* Background Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-inner relative z-10">
+              <Sparkles className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-1 relative z-10">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block mb-1">
+                Published & Live
+              </span>
+              <h2 className="text-2xl font-serif text-white font-bold">
+                Wedding Is Live! 🎉
+              </h2>
+              <p className="text-xs text-gray-300">
+                Your wedding invitation for <strong className="text-white">{publishedModal.title}</strong> is now live to the world.
+              </p>
+            </div>
+
+            {/* Public Link Box */}
+            <div className="p-3.5 rounded-2xl bg-gray-900 border border-gray-700 text-left space-y-1 relative z-10">
+              <label className="text-[10px] text-gray-400 uppercase font-semibold">
+                Invitation URL
+              </label>
+              <div className="text-amber-300 font-mono text-xs break-all">
+                {typeof window !== "undefined" ? window.location.origin : ""}/invite/{publishedModal.slug}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 relative z-10">
+              <button
+                type="button"
+                onClick={() => window.open(`/invite/${publishedModal.slug}`, "_blank")}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-amber-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-950/40 hover:scale-105 transition-all cursor-pointer"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Open Invitation</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/invite/${publishedModal.slug}`;
+                  navigator.clipboard.writeText(url);
+                  showToast("Invitation URL copied to clipboard!");
+                }}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Copy Link</span>
+              </button>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-4 text-xs text-gray-400 relative z-10">
+              <button
+                type="button"
+                onClick={() => setPublishedModal(null)}
+                className="hover:text-white underline cursor-pointer"
+              >
+                Close Window
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => router.push("/admin/dashboard")}
+                className="hover:text-amber-300 underline cursor-pointer font-medium"
+              >
+                Admin Dashboard →
+              </button>
+            </div>
           </div>
         </div>
       )}

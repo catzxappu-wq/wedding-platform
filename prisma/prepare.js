@@ -2,7 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const dbUrl = process.env.DATABASE_URL || "";
+const dbUrl =
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL ||
+  "";
 const schemaPath = path.join(__dirname, "schema.prisma");
 
 if (fs.existsSync(schemaPath)) {
