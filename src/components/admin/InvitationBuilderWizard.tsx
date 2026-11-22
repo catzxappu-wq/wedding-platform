@@ -79,8 +79,11 @@ export default function InvitationBuilderWizard({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      alert("Selected audio file is larger than 15MB. Please choose a smaller MP3 or audio file.");
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(
+        `Selected audio file is ${((file.size / (1024 * 1024)).toFixed(1))} MB. To ensure fast mobile loading and stay within server limits, direct audio files must be under 1.5MB. For longer songs, please select one of the high quality presets below or enter an MP3 URL.`
+      );
+      if (audioInputRef.current) audioInputRef.current.value = "";
       return;
     }
 
@@ -234,16 +237,41 @@ export default function InvitationBuilderWizard({
         status: newStatus,
       };
 
+      const payloadString = JSON.stringify(payload);
+      const payloadSizeBytes = new Blob([payloadString]).size;
+      const payloadSizeMb = (payloadSizeBytes / (1024 * 1024)).toFixed(2);
+
+      // Check Vercel 4.5MB serverless limit
+      if (payloadSizeBytes > 4 * 1024 * 1024) {
+        throw new Error(
+          `Total upload size (${payloadSizeMb} MB) exceeds the server limit of 4.5 MB. Please reduce the number of photos in the gallery or select an audio preset instead of a large uploaded audio file.`
+        );
+      }
+
       const url = isEditing ? `/api/invitations/${invitationId}` : "/api/invitations";
       const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: payloadString,
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const textResponse = await res.text();
+        if (res.status === 413 || textResponse.includes("Request Entity Too Large")) {
+          throw new Error(
+            "Upload payload is too large for the server (HTTP 413: Request Entity Too Large). Please remove or re-select gallery pictures so they are auto-compressed, or choose an audio preset."
+          );
+        }
+        throw new Error(textResponse || `Server returned error (${res.status})`);
+      }
+
       if (!res.ok) throw new Error(data.error || "Save failed");
 
       setFormData((prev) => ({ ...prev, status: newStatus }));
@@ -963,7 +991,7 @@ export default function InvitationBuilderWizard({
                     </span>
                   </div>
                   <span className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
-                    MP3, WAV, OGG, M4A up to 15MB
+                    MP3, WAV, OGG up to 1.5MB (or select preset below)
                   </span>
                 </div>
 
