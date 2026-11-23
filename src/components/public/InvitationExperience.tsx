@@ -23,6 +23,12 @@ import VenueMapSection from "./VenueMapSection";
 import PhotoGalleryLightbox from "./PhotoGalleryLightbox";
 import RsvpSection from "./RsvpSection";
 import ShareModal from "./ShareModal";
+import {
+  ToranBorder,
+  GaneshaInvocationBanner,
+  SaatPhereSection,
+  FamilyBlessingsBanner,
+} from "./cultural/IndianCulturalElements";
 
 interface InvitationExperienceProps {
   invitation: InvitationWithRelations;
@@ -75,6 +81,15 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const isTraditionalIndian =
+    invitation.templateId === "traditional-indian" ||
+    invitation.templateId === "royal-gold" ||
+    invitation.templateId === "south-indian" ||
+    invitation.templateId === "kannada-wedding" ||
+    template.category === "traditional" ||
+    template.category === "regional" ||
+    template.category === "luxury";
+
   return (
     <div
       className="min-h-screen text-gray-900 transition-colors duration-500 overflow-x-hidden selection:bg-amber-200"
@@ -84,6 +99,8 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         fontFamily: fontFamily === "Cinzel" ? "var(--font-cinzel), serif" : "var(--font-sans), sans-serif",
       }}
     >
+      {/* Traditional Marigold & Mango Leaves Toran */}
+      {isTraditionalIndian && <ToranBorder />}
       {/* 1. Date Reveal Envelope Opening Experience */}
       <AnimatePresence>
         {!hasOpenedEnvelope && (
@@ -135,11 +152,16 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
       {/* ======================================================== */}
 
       {/* 1. HERO SECTION */}
-      <header className="relative min-h-[92vh] flex flex-col items-center justify-center text-center px-4 py-20 overflow-hidden">
+      <header className="relative min-h-[92vh] flex flex-col items-center justify-center text-center px-4 py-16 overflow-hidden">
         {/* Subtle Decorative Background Mandala / Pattern */}
         <div className="absolute inset-0 pointer-events-none opacity-10 flex items-center justify-center">
           <div className="w-[800px] h-[800px] rounded-full border-[40px] border-amber-600/20 animate-spin-slow" />
         </div>
+
+        {/* Vedic Ganesha Invocation & Shloka Banner */}
+        {isTraditionalIndian && (
+          <GaneshaInvocationBanner primaryColor={primaryColor} />
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -348,6 +370,14 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         )}
       </section>
 
+      {/* SACRED VEDIC SAAT PHERE (SEVEN VOWS) */}
+      {isTraditionalIndian && (
+        <SaatPhereSection
+          primaryColor={primaryColor}
+          fontFamily={headingFont}
+        />
+      )}
+
       {/* 4. EVENTS & TIMELINE */}
       <EventsSchedule
         events={invitation.events}
@@ -402,6 +432,16 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         primaryColor={primaryColor}
         fontFamily={headingFont}
       />
+
+      {/* VEDIC FAMILY BLESSINGS & MANGALYA DHARANAM */}
+      {isTraditionalIndian && (
+        <FamilyBlessingsBanner
+          familyMessage={invitation.couple?.familyMessage}
+          familyNames={invitation.couple?.familyNames}
+          primaryColor={primaryColor}
+          fontFamily={headingFont}
+        />
+      )}
 
       {/* 8. RSVP SECTION */}
       <RsvpSection

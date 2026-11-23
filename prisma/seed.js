@@ -125,6 +125,23 @@ async function main() {
       }),
     },
     {
+      id: "marigold-palace",
+      name: "Royal Marigold & Rani Pink",
+      description: "Vibrant Rajasthani palace celebration featuring radiant marigold orange, royal rani pink, shehnai melodies, and festive floral jaali arches.",
+      category: "traditional",
+      previewImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+      configuration: JSON.stringify({
+        primaryColor: "#BE185D",
+        secondaryColor: "#EA580C",
+        accentColor: "#F59E0B",
+        backgroundColor: "#FFFDF5",
+        textColor: "#500724",
+        fontFamily: "Cinzel",
+        headingFont: "Cinzel",
+        envelopeStyle: "marigold-festive",
+      }),
+    },
+    {
       id: "south-indian",
       name: "South Indian Heritage",
       description: "Kanjivaram silk saree inspiration with banana leaf greens, rich temple gopuram borders, and sacred jasmine garlands.",

@@ -112,12 +112,15 @@ export default function DateRevealOpening({
                   <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-amber-500/50" />
 
                   {/* Envelope Flap Triangles Simulation */}
-                  <div className="text-center mt-4">
-                    <p className="text-xs uppercase tracking-widest text-amber-300/70 font-sans">
+                  <div className="text-center mt-3">
+                    <span className="text-amber-400 font-serif text-[11px] sm:text-xs font-bold tracking-widest block mb-0.5">
+                      ॥ श्री गणेशाय नमः ॥
+                    </span>
+                    <p className="text-[10px] uppercase tracking-widest text-amber-300/70 font-sans">
                       Together With Their Families
                     </p>
                     <p
-                      className="text-xl sm:text-2xl mt-2 font-serif text-amber-100 tracking-wider font-semibold"
+                      className="text-xl sm:text-2xl mt-1 font-serif text-amber-100 tracking-wider font-semibold"
                       style={{ fontFamily }}
                     >
                       {groomName} & {brideName}
@@ -132,8 +135,8 @@ export default function DateRevealOpening({
                   >
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-amber-700 via-amber-500 to-yellow-300 p-1 shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center">
                       <div className="w-full h-full rounded-full bg-[#3F0A11] border-2 border-amber-300/70 flex flex-col items-center justify-center text-amber-300 shadow-inner">
-                        <Heart className="w-6 h-6 fill-amber-400 text-amber-300 animate-pulse" />
-                        <span className="text-[10px] tracking-wider uppercase font-serif mt-1 font-bold">
+                        <span className="text-amber-400 text-lg leading-none font-bold">ॐ</span>
+                        <span className="text-[10px] tracking-wider uppercase font-serif mt-0.5 font-bold">
                           OPEN
                         </span>
                       </div>
