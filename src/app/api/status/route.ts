@@ -33,13 +33,17 @@ export async function GET() {
   }));
 
   const dbUrl = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL || "";
-  const rawDbUrlPrefix = dbUrl.slice(0, 15);
+  const match = dbUrl.match(/postgres(?:ql)?:\/\/[^\s'"<>]+/);
+  const parsedDbUrl = match ? match[0].trim().replace(/[;'")]+$/, "") : "";
+  const rawDbUrlPrefix = dbUrl.slice(0, 20);
   const rawDbUrlLength = dbUrl.length;
 
   return NextResponse.json({
     hasDbUrl,
     rawDbUrlPrefix,
     rawDbUrlLength,
+    parsedDbUrlFound: Boolean(parsedDbUrl),
+    parsedDbUrlPrefix: parsedDbUrl.slice(0, 25),
     dbConnected,
     dbError,
     dbCount: dbInvitations.length,

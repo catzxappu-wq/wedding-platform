@@ -10,6 +10,13 @@ let rawDbUrl =
 
 function sanitizeUrl(raw) {
   if (!raw) return "";
+
+  // If text contains postgresql:// or postgres:// anywhere inside it, extract it
+  const match = raw.match(/postgres(?:ql)?:\/\/[^\s'"<>]+/);
+  if (match) {
+    return match[0].trim().replace(/[;'")]+$/, "");
+  }
+
   let u = raw.trim();
   if ((u.startsWith('"') && u.endsWith('"')) || (u.startsWith("'") && u.endsWith("'"))) {
     u = u.slice(1, -1).trim();

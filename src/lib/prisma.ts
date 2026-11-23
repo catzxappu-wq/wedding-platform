@@ -6,6 +6,15 @@ const globalForPrisma = globalThis as unknown as {
 
 function sanitizeDbUrl(raw?: string): string | undefined {
   if (!raw) return undefined;
+
+  // 1. If text contains postgresql:// or postgres:// anywhere inside it, extract the exact connection string
+  const match = raw.match(/postgres(?:ql)?:\/\/[^\s'"<>]+/);
+  if (match) {
+    let extracted = match[0].trim();
+    extracted = extracted.replace(/[;'")]+$/, "");
+    return extracted;
+  }
+
   let url = raw.trim();
   // Strip surrounding single or double quotes
   if (
