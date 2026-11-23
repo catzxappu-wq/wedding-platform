@@ -7,16 +7,18 @@ const dbUrl =
   process.env.POSTGRES_URL ||
   process.env.DATABASE_URL ||
   "";
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 const schemaPath = path.join(__dirname, "schema.prisma");
 
 if (fs.existsSync(schemaPath)) {
   let schemaContent = fs.readFileSync(schemaPath, "utf8");
 
-  if (dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://")) {
-    console.log("Detected PostgreSQL connection string. Configuring Prisma schema for PostgreSQL...");
+  // On Vercel or when PostgreSQL connection string is detected, ALWAYS use postgresql
+  if (isVercel || dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://")) {
+    console.log("Configuring Prisma schema for PostgreSQL...");
     schemaContent = schemaContent.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
     fs.writeFileSync(schemaPath, schemaContent);
-  } else if (dbUrl.startsWith("file:") || !dbUrl) {
+  } else if (dbUrl.startsWith("file:") || (!dbUrl && !isVercel)) {
     console.log("Configuring Prisma schema for SQLite / Local...");
     schemaContent = schemaContent.replace(/provider\s*=\s*"postgresql"/, 'provider = "sqlite"');
     fs.writeFileSync(schemaPath, schemaContent);
@@ -32,9 +34,9 @@ try {
 }
 
 // If DATABASE_URL is set and reachable, try to push schema & seed
-if (dbUrl) {
+if (dbUrl && (dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://"))) {
   try {
-    console.log("Syncing database schema...");
+    console.log("Syncing database schema to PostgreSQL...");
     execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
     console.log("Database schema synced successfully.");
 
@@ -42,6 +44,6 @@ if (dbUrl) {
     execSync("node prisma/seed.js", { stdio: "inherit" });
     console.log("Database seeded successfully.");
   } catch (e) {
-    console.warn("Prisma db push or seed skipped or failed (will initialize at runtime):", e.message);
+    console.warn("Prisma db push or seed warning:", e.message);
   }
 }
