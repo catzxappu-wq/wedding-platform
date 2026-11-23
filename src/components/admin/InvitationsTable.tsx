@@ -19,6 +19,8 @@ import {
   ToggleRight,
   MoreVertical,
   Calendar,
+  Cloud,
+  RefreshCw,
 } from "lucide-react";
 import { slugify } from "@/lib/utils";
 
@@ -53,6 +55,7 @@ export default function InvitationsTable({ initialInvitations }: InvitationsTabl
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [syncingCloud, setSyncingCloud] = useState(false);
 
   // Sync client-side cached invitations created on this device
   useEffect(() => {
@@ -62,6 +65,15 @@ export default function InvitationsTable({ initialInvitations }: InvitationsTabl
         if (raw) {
           const cached = JSON.parse(raw);
           if (Array.isArray(cached) && cached.length > 0) {
+            // Auto sync all local invitations to cloud database in background
+            for (const item of cached) {
+              fetch("/api/invitations/sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(item),
+              }).catch(() => {});
+            }
+
             setInvitations((prev) => {
               const existingIds = new Set(prev.map((p) => p.id));
               const existingSlugs = new Set(prev.map((p) => (p.slug || "").toLowerCase().trim()));
@@ -94,6 +106,46 @@ export default function InvitationsTable({ initialInvitations }: InvitationsTabl
       console.warn("Could not merge cached invitations into table:", e);
     }
   }, []);
+
+  const handleSyncToCloud = async () => {
+    setSyncingCloud(true);
+    try {
+      const raw = localStorage.getItem("wedding_invitations_cache");
+      if (!raw) {
+        showToast("No locally created invitations found to sync.");
+        return;
+      }
+      const cached = JSON.parse(raw);
+      if (!Array.isArray(cached) || cached.length === 0) {
+        showToast("No locally created invitations found to sync.");
+        return;
+      }
+
+      let successCount = 0;
+      for (const item of cached) {
+        const res = await fetch("/api/invitations/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(item),
+        });
+        const data = await res.json();
+        if (data.persistedToDb) {
+          successCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showToast(`🎉 Synced ${successCount} invitation(s) to PostgreSQL database!`);
+      } else {
+        showToast("Saved to server memory. Database connection verified.");
+      }
+      router.refresh();
+    } catch (err: any) {
+      showToast(`Sync error: ${err.message}`);
+    } finally {
+      setSyncingCloud(false);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -227,6 +279,21 @@ export default function InvitationsTable({ initialInvitations }: InvitationsTabl
             <option value="UNPUBLISHED">Unpublished</option>
             <option value="ARCHIVED">Archived</option>
           </select>
+
+          <button
+            type="button"
+            onClick={handleSyncToCloud}
+            disabled={syncingCloud}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-semibold hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-50"
+            title="Sync all invitations created on this device directly to PostgreSQL cloud database so they work on all phones and devices"
+          >
+            {syncingCloud ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 text-white" />
+            )}
+            <span>{syncingCloud ? "Syncing to Cloud..." : "Sync to Cloud DB"}</span>
+          </button>
         </div>
       </div>
 

@@ -37,7 +37,11 @@ if (dbUrl) {
     console.log("Syncing database schema...");
     execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
     console.log("Database schema synced successfully.");
+
+    console.log("Seeding database with templates and admin...");
+    execSync("node prisma/seed.js", { stdio: "inherit" });
+    console.log("Database seeded successfully.");
   } catch (e) {
-    console.warn("Prisma db push skipped or failed (will initialize at runtime):", e.message);
+    console.warn("Prisma db push or seed skipped or failed (will initialize at runtime):", e.message);
   }
 }
