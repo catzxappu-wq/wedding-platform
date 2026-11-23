@@ -38,11 +38,11 @@ if (fs.existsSync(schemaPath)) {
   let schemaContent = fs.readFileSync(schemaPath, "utf8");
 
   // On Vercel or when PostgreSQL connection string is detected, ALWAYS use postgresql
-  if (isVercel || dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://")) {
+  if (isVercel || dbUrl.startsWith("postgres://") || dbUrl.startsWith("postgresql://") || !dbUrl) {
     console.log("Configuring Prisma schema for PostgreSQL...");
     schemaContent = schemaContent.replace(/provider\s*=\s*"sqlite"/, 'provider = "postgresql"');
     fs.writeFileSync(schemaPath, schemaContent);
-  } else if (dbUrl.startsWith("file:") || (!dbUrl && !isVercel)) {
+  } else if (dbUrl.startsWith("file:")) {
     console.log("Configuring Prisma schema for SQLite / Local...");
     schemaContent = schemaContent.replace(/provider\s*=\s*"postgresql"/, 'provider = "sqlite"');
     fs.writeFileSync(schemaPath, schemaContent);

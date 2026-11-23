@@ -512,6 +512,139 @@ async function main() {
   });
   console.log("Seeded Invitation 2: Arjun & Shreya (slug: arjun-shreya, status: DRAFT)");
 
+  // 3c. Seed Shrinivas & Meghashree (PUBLISHED)
+  const existingShrinivas = await prisma.invitation.findUnique({
+    where: { slug: "shrinivas-meghashree" },
+  });
+
+  if (existingShrinivas) {
+    await prisma.invitation.delete({ where: { slug: "shrinivas-meghashree" } });
+  }
+
+  await prisma.invitation.create({
+    data: {
+      slug: "shrinivas-meghashree",
+      title: "Shrinivas & Meghashree | Wedding Celebration",
+      status: "PUBLISHED",
+      templateId: "traditional-indian",
+      primaryColor: "#B91C1C",
+      secondaryColor: "#D97706",
+      accentColor: "#F59E0B",
+      backgroundColor: "#FFFBEB",
+      textColor: "#451A03",
+      fontFamily: "Cinzel",
+      headingFont: "Cinzel",
+      musicEnabled: true,
+      musicTitle: "Royal Shehnai & Sitar Harmony",
+      musicUrl: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=indian-flute-and-sitar-10492.mp3",
+      weddingDate: new Date("2026-12-18T10:30:00+05:30"),
+      startTime: "10:30 AM",
+      endTime: "10:00 PM",
+      timeZone: "Asia/Kolkata",
+      userId: admin.id,
+      couple: {
+        create: {
+          groomName: "Shrinivas",
+          brideName: "Meghashree",
+          groomPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
+          bridePhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+          couplePhoto: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80",
+          introduction: "Two hearts, two souls, woven into one eternal journey of love and joy. We warmly invite you to celebrate our sacred wedding union.",
+          story: "A journey of shared smiles, unwavering support, and endless love leading to this beautiful, auspicious milestone.",
+          familyMessage: "With the loving blessings of our parents and elders, we request the honour of your presence at our wedding festivities.",
+          familyNames: "The Family & Elders",
+        },
+      },
+      venue: {
+        create: {
+          venueName: "The Grand Heritage Mandapam",
+          fullAddress: "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008",
+          city: "Bengaluru",
+          state: "Karnataka",
+          country: "India",
+          latitude: 12.9606,
+          longitude: 77.6484,
+          googleMapsUrl: "https://maps.google.com/?q=The+Leela+Palace+Bengaluru",
+        },
+      },
+      events: {
+        create: [
+          {
+            name: "Haldi & Mehendi Celebration",
+            date: new Date("2026-12-16T10:00:00+05:30"),
+            startTime: "10:00 AM",
+            endTime: "02:00 PM",
+            venueName: "The Royal Courtyard",
+            address: "The Leela Palace, Bengaluru",
+            description: "Auspicious turmeric blessings, intricate henna designs, live folk music, and joyous celebration.",
+            icon: "Sun",
+            imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+            sortOrder: 1,
+          },
+          {
+            name: "Sangeet & Dance Night",
+            date: new Date("2026-12-17T18:30:00+05:30"),
+            startTime: "06:30 PM",
+            endTime: "11:30 PM",
+            venueName: "Grand Ballroom",
+            address: "The Leela Palace, Bengaluru",
+            description: "An energetic evening of choreography, dhol beats, family performances, and culinary delights.",
+            icon: "Music",
+            imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80",
+            sortOrder: 2,
+          },
+          {
+            name: "Auspicious Muhurtham & Saat Phere",
+            date: new Date("2026-12-18T10:30:00+05:30"),
+            startTime: "10:30 AM",
+            endTime: "01:30 PM",
+            venueName: "The Grand Mandapam",
+            address: "The Leela Palace, Bengaluru",
+            description: "Sacred Vedic rituals, Kanyadaan, Mangalya Dharanam, and the seven eternal vows around the holy fire.",
+            icon: "Heart",
+            imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80",
+            sortOrder: 3,
+          },
+          {
+            name: "Grand Reception Gala",
+            date: new Date("2026-12-18T19:30:00+05:30"),
+            startTime: "07:30 PM",
+            endTime: "11:30 PM",
+            venueName: "Palace Lawn & Courtyard",
+            address: "The Leela Palace, Bengaluru",
+            description: "An elaborate banquet dinner, cake cutting, toasts, classical fusion music, and celebrations.",
+            icon: "Sparkles",
+            imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80",
+            sortOrder: 4,
+          },
+        ],
+      },
+      gallery: {
+        create: [
+          {
+            imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80",
+            caption: "Royal Pre-Wedding Portrait",
+            sortOrder: 1,
+            isCover: true,
+          },
+          {
+            imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80",
+            caption: "Cherished moments of togetherness",
+            sortOrder: 2,
+            isCover: false,
+          },
+          {
+            imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80",
+            caption: "Golden hour promises under Bengaluru skies",
+            sortOrder: 3,
+            isCover: false,
+          },
+        ],
+      },
+    },
+  });
+  console.log("Seeded Invitation 3: Shrinivas & Meghashree (slug: shrinivas-meghashree, status: PUBLISHED)");
+
   console.log("Seeding completed successfully!");
 }
 
