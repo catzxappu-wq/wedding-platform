@@ -2,11 +2,28 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const dbUrl =
+let rawDbUrl =
   process.env.POSTGRES_PRISMA_URL ||
   process.env.POSTGRES_URL ||
   process.env.DATABASE_URL ||
   "";
+
+function sanitizeUrl(raw) {
+  if (!raw) return "";
+  let u = raw.trim();
+  if ((u.startsWith('"') && u.endsWith('"')) || (u.startsWith("'") && u.endsWith("'"))) {
+    u = u.slice(1, -1).trim();
+  }
+  if (u.startsWith("psql ")) {
+    u = u.replace(/^psql\s+/, "").trim().replace(/^['"]|['"]$/g, "").trim();
+  }
+  return u;
+}
+
+const dbUrl = sanitizeUrl(rawDbUrl);
+if (dbUrl) {
+  process.env.DATABASE_URL = dbUrl;
+}
 const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 const schemaPath = path.join(__dirname, "schema.prisma");
 

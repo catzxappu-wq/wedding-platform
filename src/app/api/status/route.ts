@@ -32,8 +32,14 @@ export async function GET() {
     status: i.status,
   }));
 
+  const dbUrl = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL || "";
+  const rawDbUrlPrefix = dbUrl.slice(0, 15);
+  const rawDbUrlLength = dbUrl.length;
+
   return NextResponse.json({
     hasDbUrl,
+    rawDbUrlPrefix,
+    rawDbUrlLength,
     dbConnected,
     dbError,
     dbCount: dbInvitations.length,
