@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { generateGoogleCalendarUrl } from "@/lib/ics";
+import { LanguageMode, getKannadaEvent, KANNADA_CULTURAL_TEXTS } from "@/lib/kannadaDictionary";
 
 interface EventItem {
   id: string;
@@ -36,6 +37,7 @@ interface EventsScheduleProps {
   secondaryColor?: string;
   fontFamily?: string;
   coupleTitle?: string;
+  languageMode?: LanguageMode;
 }
 
 const iconMap: Record<string, any> = {
@@ -53,12 +55,16 @@ export default function EventsSchedule({
   secondaryColor = "#58111A",
   fontFamily = "Cinzel",
   coupleTitle = "The Wedding",
+  languageMode = "bilingual",
 }: EventsScheduleProps) {
   const [activeCalendarModal, setActiveCalendarModal] = useState<EventItem | null>(null);
 
   if (!events || events.length === 0) {
     return null;
   }
+
+  const isKannada = languageMode === "kannada";
+  const isBilingual = languageMode === "bilingual";
 
   const sortedEvents = [...events].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -82,16 +88,24 @@ export default function EventsSchedule({
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-900 text-xs tracking-widest uppercase mb-3 font-sans">
           <Calendar className="w-3.5 h-3.5 text-amber-700" />
-          <span>Wedding Festivities</span>
+          <span>{isKannada ? "ಮಂಗಳ ಕಾರ್ಯಕ್ರಮಗಳ ವಿವರ" : "Wedding Festivities • ಕಾರ್ಯಕ್ರಮಗಳು"}</span>
         </div>
         <h2
-          className="text-3xl sm:text-4xl lg:text-5xl font-serif text-gray-900 font-bold tracking-tight"
-          style={{ fontFamily }}
+          className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 ${
+            isKannada || isBilingual ? "font-kannada" : "font-serif"
+          }`}
+          style={{ fontFamily: isKannada ? undefined : fontFamily }}
         >
-          Events & Celebrations
+          {isKannada
+            ? "ವಿವಾಹ ಮಹೋತ್ಸವದ ಶುಭ ಕಾರ್ಯಕ್ರಮಗಳು"
+            : isBilingual
+            ? "Events & Celebrations • ಕಾರ್ಯಕ್ರಮಗಳು"
+            : "Events & Celebrations"}
         </h2>
-        <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto mt-2">
-          Every moment is crafted with love. Please join us in celebrating each special occasion.
+        <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto mt-2 leading-relaxed">
+          {isKannada
+            ? "ಪ್ರತಿಯೊಂದು ಕ್ಷಣವೂ ಪ್ರೀತಿ-ಸಡಗರದಿಂದ ಕೂಡಿದೆ. ನಮ್ಮ ಈ ಮಂಗಳ ಕಾರ್ಯಕ್ರಮಗಳಿಗೆ ತಾವು ಸಕುಟುಂಬ ಸಮೇತರಾಗಿ ಆಗಮಿಸಿ ಹರಸಬೇಕಾಗಿ ಕೋರುತ್ತೇವೆ."
+            : "Every moment is crafted with love. Please join us in celebrating each special occasion."}
         </p>
       </div>
 
@@ -108,6 +122,8 @@ export default function EventsSchedule({
                 year: "numeric",
               })
             : "Date to be announced";
+
+          const knEvent = getKannadaEvent(ev.name, ev.description);
 
           return (
             <div
@@ -137,7 +153,7 @@ export default function EventsSchedule({
               <div className="flex-1 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs uppercase tracking-widest font-semibold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    Event 0{index + 1}
+                    {isKannada ? `ಕಾರ್ಯಕ್ರಮ 0${index + 1}` : `Event 0${index + 1}`}
                   </span>
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-amber-900/80">
                     <Calendar className="w-3.5 h-3.5 text-amber-600" />
@@ -145,12 +161,35 @@ export default function EventsSchedule({
                   </div>
                 </div>
 
-                <h3
-                  className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 group-hover:text-amber-700 transition-colors"
-                  style={{ fontFamily }}
-                >
-                  {ev.name}
-                </h3>
+                <div className="space-y-1">
+                  <h3
+                    className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 group-hover:text-amber-700 transition-colors"
+                    style={{ fontFamily }}
+                  >
+                    {isKannada ? knEvent.name : ev.name}
+                  </h3>
+                  {isBilingual && knEvent.name !== ev.name && (
+                    <p className="text-base sm:text-lg font-kannada font-semibold text-amber-800">
+                      {knEvent.name}
+                    </p>
+                  )}
+                </div>
+
+                {/* Event Description */}
+                {(ev.description || knEvent.description) && (
+                  <div className="space-y-1 text-sm sm:text-base text-gray-700 leading-relaxed">
+                    {(isKannada || isBilingual) && knEvent.description && (
+                      <p className="font-kannada text-amber-950 font-medium">
+                        {knEvent.description}
+                      </p>
+                    )}
+                    {(!isKannada || (isBilingual && ev.description !== knEvent.description)) && ev.description && (
+                      <p className="text-xs sm:text-sm text-gray-600 italic">
+                        {ev.description}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {ev.description && (
                   <p className="text-sm text-gray-600 leading-relaxed">{ev.description}</p>

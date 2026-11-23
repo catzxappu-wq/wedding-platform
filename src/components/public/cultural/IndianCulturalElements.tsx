@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Heart, Sun, Flame, Check } from "lucide-react";
+import { LanguageMode, KANNADA_CULTURAL_TEXTS } from "@/lib/kannadaDictionary";
 
 // ==========================================
 // 1. SACRED LORD GANESHA SVG ICON
@@ -197,7 +198,16 @@ export function ToranBorder() {
 // ==========================================
 // 5. AUSPICIOUS SHLOKA & GANESHA BANNER
 // ==========================================
-export function GaneshaInvocationBanner({ primaryColor = "#B91C1C" }: { primaryColor?: string }) {
+export function GaneshaInvocationBanner({
+  primaryColor = "#B91C1C",
+  languageMode = "bilingual",
+}: {
+  primaryColor?: string;
+  languageMode?: LanguageMode;
+}) {
+  const isKannada = languageMode === "kannada";
+  const isBilingual = languageMode === "bilingual";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -220,30 +230,45 @@ export function GaneshaInvocationBanner({ primaryColor = "#B91C1C" }: { primaryC
           <GaneshaIcon className="w-12 h-12" />
         </div>
 
-        {/* Sanskrit Invocation */}
+        {/* Invocation Title in Kannada / Sanskrit */}
         <div className="space-y-1.5">
           <h3
-            className="text-lg sm:text-2xl font-serif font-bold tracking-wider"
+            className={`text-xl sm:text-2xl font-bold tracking-wider ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
             style={{ color: primaryColor }}
           >
-            ॥ श्री गणेशाय नमः ॥
+            {isKannada || isBilingual
+              ? KANNADA_CULTURAL_TEXTS.ganeshaInvocation.kannadaTitle
+              : KANNADA_CULTURAL_TEXTS.ganeshaInvocation.sanskritTitle}
           </h3>
-          <p className="text-xs sm:text-sm font-serif italic text-amber-950/80 leading-relaxed max-w-md mx-auto">
-            वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ। <br className="hidden sm:inline" />
-            निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥
+
+          {/* Shloka in Kannada Script or Devanagari */}
+          <p
+            className={`text-xs sm:text-sm italic text-amber-950/90 leading-relaxed max-w-md mx-auto whitespace-pre-line ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
+          >
+            {isKannada || isBilingual
+              ? KANNADA_CULTURAL_TEXTS.ganeshaInvocation.shlokaKannada
+              : KANNADA_CULTURAL_TEXTS.ganeshaInvocation.shlokaDevanagari}
           </p>
         </div>
 
-        {/* English Translation */}
-        <p className="text-[11px] uppercase tracking-widest text-amber-800/70 font-semibold font-sans">
-          "O Lord with the curved trunk and immense brilliance of millions of suns, please bless our union and remove all obstacles."
+        {/* Meaning in Kannada / English */}
+        <p className="text-xs sm:text-sm text-amber-900/80 font-medium max-w-md mx-auto">
+          {isKannada
+            ? `"${KANNADA_CULTURAL_TEXTS.ganeshaInvocation.meaningKannada}"`
+            : isBilingual
+            ? `"${KANNADA_CULTURAL_TEXTS.ganeshaInvocation.meaningKannada}" • ${KANNADA_CULTURAL_TEXTS.ganeshaInvocation.meaningEnglish}`
+            : `"${KANNADA_CULTURAL_TEXTS.ganeshaInvocation.meaningEnglish}"`}
         </p>
 
-        {/* Auspicious Shubh Vivah Tag */}
-        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-600 text-amber-50 text-[11px] font-bold uppercase tracking-widest shadow-sm">
-          <span>शुभ विवाह</span>
-          <span>•</span>
-          <span>Auspicious Wedding Union</span>
+        {/* Auspicious Shubha Vivaha Tag */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-600 text-amber-50 text-xs font-bold uppercase tracking-widest shadow-sm font-kannada">
+          <span>{KANNADA_CULTURAL_TEXTS.ganeshaInvocation.shubhaVivahaTag}</span>
+          <span className="hidden sm:inline">•</span>
+          <span className="hidden sm:inline text-[11px] font-sans">Auspicious Wedding Union</span>
         </div>
       </div>
     </motion.div>
@@ -256,91 +281,53 @@ export function GaneshaInvocationBanner({ primaryColor = "#B91C1C" }: { primaryC
 interface SaatPhereSectionProps {
   primaryColor?: string;
   fontFamily?: string;
+  languageMode?: LanguageMode;
 }
 
 export function SaatPhereSection({
   primaryColor = "#B91C1C",
   fontFamily = "Cinzel",
+  languageMode = "bilingual",
 }: SaatPhereSectionProps) {
   const [activePhere, setActivePhere] = useState<number>(0);
+  const isKannada = languageMode === "kannada";
+  const isBilingual = languageMode === "bilingual";
 
-  const pheras = [
-    {
-      num: 1,
-      title: "First Vow (Pratham Phere)",
-      sanskrit: "इष एकपदी भव सा मामनुव्रता भव",
-      meaning: "A sacred prayer for nourishment, good health, and shared prosperity. We vow to nourish each other and our family with pure love and devotion.",
-      symbol: "🌾 Nourishment & Health",
-    },
-    {
-      num: 2,
-      title: "Second Vow (Dwitiya Phere)",
-      sanskrit: "ऊर्जे द्विपदी भव सा मामनुव्रता भव",
-      meaning: "A vow of mutual strength, physical vitality, mental courage, and spiritual steadfastness through all tides of life.",
-      symbol: "🛡️ Strength & Resilience",
-    },
-    {
-      num: 3,
-      title: "Third Vow (Tritiya Phere)",
-      sanskrit: "रायस्पोषाय त्रिपदी भव सा मामनुव्रता भव",
-      meaning: "A prayer for righteous wealth, prosperity, and charity. We promise to earn honestly and share generously with society.",
-      symbol: "💰 Prosperity & Dharma",
-    },
-    {
-      num: 4,
-      title: "Fourth Vow (Chaturthi Phere)",
-      sanskrit: "मायोभव्याय चतुष्पदी भव सा मामनुव्रता भव",
-      meaning: "A pledge of profound mutual trust, lifelong harmony, emotional understanding, and happiness in our shared household.",
-      symbol: "🕊️ Harmony & Trust",
-    },
-    {
-      num: 5,
-      title: "Fifth Vow (Pancham Phere)",
-      sanskrit: "प्रजाभ्यः पञ्चपदी भव सा मामनुव्रता भव",
-      meaning: "A prayer for noble, virtuous children, wisdom, compassion, and caring for all living beings around us.",
-      symbol: "🌱 Compassion & Lineage",
-    },
-    {
-      num: 6,
-      title: "Sixth Vow (Shashtha Phere)",
-      sanskrit: "ऋतुभ्यः षट्पदी भव सा मामनुव्रता भव",
-      meaning: "A promise of lifelong togetherness and joyful companionship across all seasons, joys, and hardships.",
-      symbol: "🌸 All Seasons of Life",
-    },
-    {
-      num: 7,
-      title: "Seventh Vow (Saptam Phere)",
-      sanskrit: "सखे सप्तपदी भव सा मामनुव्रता भव",
-      meaning: "The culmination of eternal friendship, spiritual oneness, and undying fidelity. Two bodies, two minds, forever one soul.",
-      symbol: "❤️ Eternal Friendship",
-    },
-  ];
+  const saptapadiList = KANNADA_CULTURAL_TEXTS.saptapadi;
 
   return (
     <section className="py-16 px-4 max-w-5xl mx-auto">
       <div className="text-center mb-10 space-y-2">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-800 text-xs tracking-widest uppercase font-semibold">
           <Flame className="w-3.5 h-3.5 text-amber-600" />
-          <span>Sacred Vedic Rituals</span>
+          <span>{isKannada ? "ಪವಿತ್ರ ವೈದಿಕ ಶಾಸ್ತ್ರ" : "Sacred Vedic Rituals • ಸಪ್ತಪದಿ"}</span>
         </div>
         <h2
-          className="text-3xl sm:text-4xl font-serif font-bold text-gray-900"
-          style={{ fontFamily }}
+          className={`text-3xl sm:text-4xl font-bold text-gray-900 ${
+            isKannada || isBilingual ? "font-kannada" : "font-serif"
+          }`}
+          style={{ fontFamily: isKannada ? undefined : fontFamily }}
         >
-          The Sacred Saat Phere
+          {isKannada
+            ? "ಪವಿತ್ರ ಸಪ್ತಪದಿ - ಏಳು ಪವಿತ್ರ ಹೆಜ್ಜೆಗಳು"
+            : isBilingual
+            ? "The Sacred Saat Phere • ಸಪ್ತಪದಿ"
+            : "The Sacred Saat Phere"}
         </h2>
-        <p className="text-xs sm:text-sm text-gray-600 max-w-xl mx-auto">
-          Seven sacred rounds around the holy Agni (fire), sealing seven eternal promises of love, loyalty, and companionship.
+        <p className="text-xs sm:text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
+          {isKannada
+            ? "ಪವಿತ್ರ ಅಗ್ನಿಸಾಕ್ಷಿಯಾಗಿ ವಧು-ವರರು ತೆಗೆದುಕೊಳ್ಳುವ ಏಳು ಪವಿತ್ರ ಹೆಜ್ಜೆಗಳು ಮತ್ತು ಜೀವನಪರ್ಯಂತದ ಬದ್ಧತೆಯ ಪ್ರತಿಜ್ಞೆಗಳು."
+            : "Seven sacred rounds around the holy Agni (fire), sealing seven eternal promises of love, loyalty, and companionship."}
         </p>
       </div>
 
       {/* Pheras Grid Selector */}
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 mb-8">
-        {pheras.map((p, index) => {
+        {saptapadiList.map((p, index) => {
           const isActive = activePhere === index;
           return (
             <button
-              key={p.num}
+              key={p.step}
               onClick={() => setActivePhere(index)}
               className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
                 isActive
@@ -349,7 +336,7 @@ export function SaatPhereSection({
               }`}
             >
               <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
-                Phera {p.num}
+                {isKannada ? `ಹೆಜ್ಜೆ ${p.step}` : `Phera ${p.step}`}
               </span>
               <span className="text-xs font-serif font-bold truncate max-w-full">
                 {p.symbol.split(" ")[0]}
@@ -368,34 +355,48 @@ export function SaatPhereSection({
         className="rounded-3xl bg-gradient-to-br from-amber-50 via-white to-orange-50 border-2 border-amber-400/50 p-6 sm:p-8 shadow-xl relative overflow-hidden text-center space-y-4"
       >
         <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto text-lg font-bold shadow-inner border border-amber-300">
-          {pheras[activePhere].num}
+          {saptapadiList[activePhere].step}
         </div>
 
         <div>
           <span className="text-[11px] font-bold uppercase tracking-widest text-amber-700 block mb-1">
-            {pheras[activePhere].symbol}
+            {saptapadiList[activePhere].symbol}
           </span>
           <h3
-            className="text-xl sm:text-2xl font-serif font-bold text-gray-900"
-            style={{ fontFamily }}
+            className={`text-xl sm:text-2xl font-bold text-gray-900 ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
+            style={{ fontFamily: isKannada ? undefined : fontFamily }}
           >
-            {pheras[activePhere].title}
+            {saptapadiList[activePhere].kannadaTitle}
           </h3>
           <p
-            className="text-base sm:text-lg font-serif italic text-amber-900 mt-2 font-medium"
+            className={`text-base sm:text-lg italic text-amber-900 mt-2 font-medium ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
             style={{ color: primaryColor }}
           >
-            "{pheras[activePhere].sanskrit}"
+            "{saptapadiList[activePhere].sanskrit}"
           </p>
         </div>
 
-        <p className="text-sm sm:text-base text-gray-700 max-w-2xl mx-auto leading-relaxed">
-          {pheras[activePhere].meaning}
-        </p>
+        {/* Meaning in Kannada & English */}
+        <div className="max-w-2xl mx-auto space-y-2">
+          {(isKannada || isBilingual) && (
+            <p className="text-sm sm:text-base text-gray-800 font-kannada leading-relaxed font-medium">
+              {saptapadiList[activePhere].meaningKannada}
+            </p>
+          )}
+          {(!isKannada || isBilingual) && (
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed italic">
+              {saptapadiList[activePhere].meaningEnglish}
+            </p>
+          )}
+        </div>
 
         {/* Stepper Dots */}
         <div className="flex items-center justify-center gap-2 pt-2">
-          {pheras.map((_, idx) => (
+          {saptapadiList.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setActivePhere(idx)}
@@ -418,6 +419,7 @@ interface FamilyBlessingsProps {
   familyNames?: string | null;
   primaryColor?: string;
   fontFamily?: string;
+  languageMode?: LanguageMode;
 }
 
 export function FamilyBlessingsBanner({
@@ -425,7 +427,11 @@ export function FamilyBlessingsBanner({
   familyNames,
   primaryColor = "#B91C1C",
   fontFamily = "Cinzel",
+  languageMode = "bilingual",
 }: FamilyBlessingsProps) {
+  const isKannada = languageMode === "kannada";
+  const isBilingual = languageMode === "bilingual";
+
   return (
     <section className="py-12 px-4 max-w-4xl mx-auto text-center">
       <div className="relative p-8 rounded-3xl bg-white/90 border border-amber-400/40 shadow-xl backdrop-blur-md space-y-4">
@@ -434,16 +440,24 @@ export function FamilyBlessingsBanner({
           <KalashIcon className="w-10 h-10" />
         </div>
 
-        {/* Sanskrit Blessing */}
+        {/* Sacred Mangalya Shloka */}
         <div className="space-y-1">
           <h4
-            className="text-base sm:text-lg font-serif font-bold tracking-wide"
+            className={`text-base sm:text-lg font-bold tracking-wide whitespace-pre-line ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
             style={{ color: primaryColor }}
           >
-            माङ्गल्यं तन्तुनानेन लोकजीवनहेतुना।
+            {isKannada || isBilingual
+              ? KANNADA_CULTURAL_TEXTS.mangalyaDharanam.shlokaKannada
+              : KANNADA_CULTURAL_TEXTS.mangalyaDharanam.shlokaDevanagari}
           </h4>
-          <p className="text-xs sm:text-sm font-serif italic text-amber-900/80">
-            कण्ठे बध्नामि सुभगे सञ्जीव शरदः शतम्॥
+          <p className="text-xs sm:text-sm italic text-amber-900/80 max-w-xl mx-auto">
+            {isKannada
+              ? `"${KANNADA_CULTURAL_TEXTS.mangalyaDharanam.meaningKannada}"`
+              : isBilingual
+              ? `"${KANNADA_CULTURAL_TEXTS.mangalyaDharanam.meaningKannada}"`
+              : `"${KANNADA_CULTURAL_TEXTS.mangalyaDharanam.meaningEnglish}"`}
           </p>
         </div>
 
@@ -461,8 +475,8 @@ export function FamilyBlessingsBanner({
         </div>
 
         {/* Folded Hands Namaste Footer */}
-        <div className="inline-flex items-center gap-2 pt-2 text-xs font-semibold text-amber-800 uppercase tracking-widest">
-          <span>🙏 अतिथि देवो भव • Welcome With Folded Hands 🙏</span>
+        <div className="inline-flex items-center gap-2 pt-2 text-xs font-semibold text-amber-800 uppercase tracking-widest font-kannada">
+          <span>{KANNADA_CULTURAL_TEXTS.welcomeGreeting.kannada}</span>
         </div>
       </div>
     </section>

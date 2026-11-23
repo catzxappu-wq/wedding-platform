@@ -2,6 +2,24 @@ import { TemplateConfig } from "@/types";
 
 export const TEMPLATES: TemplateConfig[] = [
   {
+    id: "kannada-traditional",
+    name: "Kannada Kalyana Vaibhava (ಕರ್ನಾಟಕ ಸಾಂಪ್ರದಾಯಿಕ ವೈಭವ)",
+    description: "Authentic Karnataka traditional wedding splendour featuring Lord Ganesha invocation, marigold toran, Mysore silk aesthetic, and sacred Saptapadi vows in Kannada.",
+    category: "traditional",
+    previewImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+    theme: {
+      primaryColor: "#991B1B",
+      secondaryColor: "#D97706",
+      accentColor: "#F59E0B",
+      backgroundColor: "#FFFBEB",
+      textColor: "#451A03",
+      fontFamily: "Noto Serif Kannada",
+      headingFont: "Noto Serif Kannada",
+      envelopeStyle: "mysore-silk",
+      motifType: "temple",
+    },
+  },
+  {
     id: "traditional-indian",
     name: "Traditional Indian (Vedic Vermilion)",
     description: "Authentic Indian cultural heritage with Lord Ganesha blessing, marigold toran, sacred Saat Phere 7 vows, vermilion red & temple gold.",

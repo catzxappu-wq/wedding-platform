@@ -29,6 +29,12 @@ import {
   SaatPhereSection,
   FamilyBlessingsBanner,
 } from "./cultural/IndianCulturalElements";
+import LanguageSwitcher from "./LanguageSwitcher";
+import {
+  LanguageMode,
+  getKannadaName,
+  KANNADA_CULTURAL_TEXTS,
+} from "@/lib/kannadaDictionary";
 
 interface InvitationExperienceProps {
   invitation: InvitationWithRelations;
@@ -52,6 +58,12 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
   const groomName = invitation.couple?.groomName || "Groom";
   const brideName = invitation.couple?.brideName || "Bride";
   const coupleTitle = `${groomName} & ${brideName}`;
+
+  const [languageMode, setLanguageMode] = useState<LanguageMode>("bilingual");
+  const groomKannada = getKannadaName(groomName);
+  const brideKannada = getKannadaName(brideName);
+  const isKannada = languageMode === "kannada";
+  const isBilingual = languageMode === "bilingual";
 
   const formattedWeddingDate = invitation.weddingDate
     ? new Date(invitation.weddingDate).toLocaleDateString("en-US", {
@@ -118,6 +130,15 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         )}
       </AnimatePresence>
 
+      {/* Floating Language Switcher (Kannada / English / Bilingual) */}
+      <div className="fixed top-4 right-4 z-40">
+        <LanguageSwitcher
+          currentLanguage={languageMode}
+          onLanguageChange={setLanguageMode}
+          primaryColor={primaryColor}
+        />
+      </div>
+
       {/* Floating Music Player */}
       {invitation.musicEnabled && (
         <MusicPlayer
@@ -160,7 +181,10 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
 
         {/* Vedic Ganesha Invocation & Shloka Banner */}
         {isTraditionalIndian && (
-          <GaneshaInvocationBanner primaryColor={primaryColor} />
+          <GaneshaInvocationBanner
+            primaryColor={primaryColor}
+            languageMode={languageMode}
+          />
         )}
 
         <motion.div
@@ -170,30 +194,52 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
           className="relative max-w-3xl mx-auto space-y-6 z-10"
         >
           {/* Top Tagline Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 backdrop-blur-md border border-amber-400/40 shadow-sm text-xs uppercase tracking-[0.25em] font-semibold text-amber-900">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 backdrop-blur-md border border-amber-400/40 shadow-sm text-xs uppercase tracking-[0.2em] font-semibold text-amber-900">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>The Wedding Celebration Of</span>
+            <span className={isKannada || isBilingual ? "font-kannada" : ""}>
+              {isKannada
+                ? KANNADA_CULTURAL_TEXTS.ui.celebrationOf.kannada
+                : isBilingual
+                ? `${KANNADA_CULTURAL_TEXTS.ui.celebrationOf.kannada} • The Wedding Celebration Of`
+                : KANNADA_CULTURAL_TEXTS.ui.celebrationOf.english}
+            </span>
           </div>
 
           {/* Couple Names Headline */}
-          <div className="space-y-3 my-4">
-            <h1
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-gray-900"
-              style={{ fontFamily: headingFont }}
-            >
-              {groomName}
-            </h1>
+          <div className="space-y-4 my-4">
+            <div className="space-y-1">
+              <h1
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-gray-900"
+                style={{ fontFamily: headingFont }}
+              >
+                {groomName}
+              </h1>
+              {(isKannada || isBilingual) && groomKannada && (
+                <p className="text-2xl sm:text-4xl font-kannada font-bold text-amber-800 tracking-wide">
+                  ಶ್ರೀ {groomKannada}
+                </p>
+              )}
+            </div>
+
             <div className="flex items-center justify-center gap-4 text-amber-600">
               <div className="h-[1px] w-16 bg-current opacity-40" />
               <Heart className="w-6 h-6 fill-current animate-pulse" />
               <div className="h-[1px] w-16 bg-current opacity-40" />
             </div>
-            <h1
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-gray-900"
-              style={{ fontFamily: headingFont }}
-            >
-              {brideName}
-            </h1>
+
+            <div className="space-y-1">
+              <h1
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-gray-900"
+                style={{ fontFamily: headingFont }}
+              >
+                {brideName}
+              </h1>
+              {(isKannada || isBilingual) && brideKannada && (
+                <p className="text-2xl sm:text-4xl font-kannada font-bold text-amber-800 tracking-wide">
+                  ಕುಮಾರಿ {brideKannada}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Quote / Introduction */}
@@ -205,8 +251,12 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
           {formattedWeddingDate && (
             <div className="pt-4 flex flex-col items-center">
               <div className="px-6 py-3 rounded-2xl bg-white/90 backdrop-blur-md border border-amber-400/50 shadow-md">
-                <p className="text-xs uppercase tracking-[0.2em] text-amber-800 font-semibold">
-                  Save The Date
+                <p className="text-xs uppercase tracking-[0.2em] text-amber-800 font-semibold font-kannada">
+                  {isKannada
+                    ? KANNADA_CULTURAL_TEXTS.ui.saveTheDate.kannada
+                    : isBilingual
+                    ? `${KANNADA_CULTURAL_TEXTS.ui.saveTheDate.kannada} • SAVE THE DATE`
+                    : KANNADA_CULTURAL_TEXTS.ui.saveTheDate.english}
                 </p>
                 <p
                   className="text-lg sm:text-xl font-serif font-bold text-gray-900 mt-0.5"
@@ -230,7 +280,13 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
               className="px-8 py-3.5 rounded-full text-white font-serif tracking-widest text-xs uppercase font-semibold shadow-lg shadow-amber-800/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
               style={{ backgroundColor: primaryColor }}
             >
-              RSVP Now
+              <span className={isKannada || isBilingual ? "font-kannada text-xs" : ""}>
+                {isKannada
+                  ? KANNADA_CULTURAL_TEXTS.ui.rsvpButton.kannada
+                  : isBilingual
+                  ? `${KANNADA_CULTURAL_TEXTS.ui.rsvpButton.kannada} • RSVP Now`
+                  : KANNADA_CULTURAL_TEXTS.ui.rsvpButton.english}
+              </span>
             </a>
 
             {invitation.weddingDate && (
@@ -239,7 +295,9 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
                 className="px-6 py-3.5 rounded-full bg-white/90 hover:bg-white text-gray-800 font-serif tracking-wider text-xs uppercase font-semibold border border-amber-400/40 shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Calendar className="w-4 h-4 text-amber-600" />
-                <span>Add to Calendar</span>
+                <span className={isKannada ? "font-kannada" : ""}>
+                  {isKannada ? KANNADA_CULTURAL_TEXTS.ui.addToCalendar.kannada : "Add to Calendar"}
+                </span>
               </button>
             )}
           </div>
@@ -268,13 +326,21 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-900 text-xs tracking-widest uppercase mb-3 font-sans">
             <Heart className="w-3.5 h-3.5 text-amber-600 fill-current" />
-            <span>The Happy Couple</span>
+            <span className={isKannada || isBilingual ? "font-kannada" : ""}>
+              {isKannada ? "ನವದಂಪತಿಗಳು" : isBilingual ? "ನವದಂಪತಿಗಳು • The Happy Couple" : "The Happy Couple"}
+            </span>
           </div>
           <h2
-            className="text-3xl sm:text-4xl font-serif text-gray-900 font-bold"
-            style={{ fontFamily: headingFont }}
+            className={`text-3xl sm:text-4xl font-bold text-gray-900 ${
+              isKannada || isBilingual ? "font-kannada" : "font-serif"
+            }`}
+            style={{ fontFamily: isKannada ? undefined : headingFont }}
           >
-            Meet The Bride & Groom
+            {isKannada
+              ? KANNADA_CULTURAL_TEXTS.ui.meetCouple.kannada
+              : isBilingual
+              ? `${KANNADA_CULTURAL_TEXTS.ui.meetCouple.kannada} • Meet The Couple`
+              : KANNADA_CULTURAL_TEXTS.ui.meetCouple.english}
           </h2>
         </div>
 
@@ -292,17 +358,19 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
                 loading="lazy"
               />
             </div>
-            <span className="text-xs uppercase tracking-widest font-semibold text-amber-800">
-              The Groom
+            <span className="text-xs uppercase tracking-widest font-semibold text-amber-800 font-kannada">
+              {isKannada ? "ವರ" : isBilingual ? "ವರ • The Groom" : "The Groom"}
             </span>
             <h3
               className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mt-1"
               style={{ fontFamily: headingFont }}
             >
-              {groomName}
+              {groomName} {groomKannada && <span className="font-kannada text-xl text-amber-800">({groomKannada})</span>}
             </h3>
             <p className="text-sm text-gray-600 mt-3 leading-relaxed">
-              Ready to embark on life's grandest journey with the one who makes every day brighter.
+              {isKannada
+                ? "ಜೀವನದ ಪ್ರತಿ ಹೆಜ್ಜೆಯಲ್ಲೂ ಸಾಥ್ ನೀಡುವ ತನ್ನ ಪ್ರೀತಿಯ ಮಡದಿಯೊಂದಿಗೆ ನವಜೀವನವನ್ನು ಆರಂಭಿಸಲು ಸಜ್ಜಾಗಿರುವ ವರ."
+                : "Ready to embark on life's grandest journey with the one who makes every day brighter."}
             </p>
           </div>
 
@@ -319,17 +387,19 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
                 loading="lazy"
               />
             </div>
-            <span className="text-xs uppercase tracking-widest font-semibold text-amber-800">
-              The Bride
+            <span className="text-xs uppercase tracking-widest font-semibold text-amber-800 font-kannada">
+              {isKannada ? "ವಧು" : isBilingual ? "ವಧು • The Bride" : "The Bride"}
             </span>
             <h3
               className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 mt-1"
               style={{ fontFamily: headingFont }}
             >
-              {brideName}
+              {brideName} {brideKannada && <span className="font-kannada text-xl text-amber-800">({brideKannada})</span>}
             </h3>
             <p className="text-sm text-gray-600 mt-3 leading-relaxed">
-              Stepping into eternity with her soulmate, surrounded by the warmth of family and laughter.
+              {isKannada
+                ? "ಕುಟುಂಬದ ಪ್ರೀತಿ, ಆಶೀರ್ವಾದಗಳೊಂದಿಗೆ ತನ್ನ ಬಾಳ ಸಂಗಾತಿಯ ಜೊತೆಗೂಡಿ ಹೊಸ ಬಾಳಿಗೆ ಹೆಜ್ಜೆಯಿಡುತ್ತಿರುವ ವಧು."
+                : "Stepping into eternity with her soulmate, surrounded by the warmth of family and laughter."}
             </p>
           </div>
         </div>
@@ -340,10 +410,10 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
             {invitation.couple?.story && (
               <div className="space-y-3">
                 <h4
-                  className="text-2xl font-serif font-bold text-gray-900"
-                  style={{ fontFamily: headingFont }}
+                  className={`text-2xl font-bold text-gray-900 ${isKannada || isBilingual ? "font-kannada" : "font-serif"}`}
+                  style={{ fontFamily: isKannada ? undefined : headingFont }}
                 >
-                  Our Love Story
+                  {isKannada ? "ನಮ್ಮ ಪ್ರೇಮ ಕಥೆ" : isBilingual ? "Our Love Story • ಪ್ರೇಮ ಕಥೆ" : "Our Love Story"}
                 </h4>
                 <p className="text-sm sm:text-base text-gray-700 leading-relaxed max-w-2xl mx-auto">
                   {invitation.couple.story}
@@ -353,14 +423,14 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
 
             {invitation.couple?.familyMessage && (
               <div className="pt-6 border-t border-amber-200/60 space-y-2">
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-800">
-                  Family Blessings
+                <p className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-800 font-kannada">
+                  {isKannada ? "ಕುಟುಂಬದ ಹಾರೈಕೆಗಳು" : isBilingual ? "Family Blessings • ಕುಟುಂಬದ ಹಾರೈಕೆ" : "Family Blessings"}
                 </p>
                 <p className="text-sm text-gray-600 italic max-w-xl mx-auto">
                   "{invitation.couple.familyMessage}"
                 </p>
                 {invitation.couple.familyNames && (
-                  <p className="text-xs font-semibold text-gray-800 mt-2">
+                  <p className="text-xs font-semibold text-gray-800 mt-2 font-kannada">
                     — {invitation.couple.familyNames}
                   </p>
                 )}
@@ -375,6 +445,7 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         <SaatPhereSection
           primaryColor={primaryColor}
           fontFamily={headingFont}
+          languageMode={languageMode}
         />
       )}
 
@@ -385,6 +456,7 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         secondaryColor={secondaryColor}
         fontFamily={headingFont}
         coupleTitle={coupleTitle}
+        languageMode={languageMode}
       />
 
       {/* 5. ADD TO CALENDAR MASTER BAR */}
@@ -440,6 +512,7 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
           familyNames={invitation.couple?.familyNames}
           primaryColor={primaryColor}
           fontFamily={headingFont}
+          languageMode={languageMode}
         />
       )}
 

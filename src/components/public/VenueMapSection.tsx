@@ -42,9 +42,9 @@ export default function VenueMapSection({
         <div className="flex flex-col md:flex-row gap-8 items-center">
           {/* Left Details */}
           <div className="flex-1 space-y-4 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs tracking-widest uppercase font-semibold font-sans">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs tracking-widest uppercase font-semibold font-kannada">
               <MapPin className="w-3.5 h-3.5 text-amber-700" />
-              <span>Wedding Venue</span>
+              <span>ಕಲ್ಯಾಣ ಮಂಟಪದ ವಿಳಾಸ • WEDDING VENUE</span>
             </div>
 
             <h3
@@ -72,11 +72,11 @@ export default function VenueMapSection({
                 href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-serif tracking-wider uppercase font-semibold text-white shadow-lg shadow-amber-800/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-kannada font-semibold text-white shadow-lg shadow-amber-800/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 style={{ backgroundColor: primaryColor }}
               >
                 <Navigation className="w-4 h-4" />
-                <span>Open in Google Maps</span>
+                <span>ಮಾರ್ಗಸೂಚಿ ಪಡೆಯಿರಿ • Google Maps</span>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70" />
               </a>
             </div>

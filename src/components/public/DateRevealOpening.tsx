@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Heart, Mail, ChevronDown } from "lucide-react";
+import { getKannadaName } from "@/lib/kannadaDictionary";
 
 interface DateRevealOpeningProps {
   groomName: string;
@@ -29,6 +30,9 @@ export default function DateRevealOpening({
 }: DateRevealOpeningProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+
+  const groomKannada = getKannadaName(groomName);
+  const brideKannada = getKannadaName(brideName);
 
   const formattedDate = weddingDate
     ? new Date(weddingDate).toLocaleDateString("en-US", {
@@ -113,11 +117,11 @@ export default function DateRevealOpening({
 
                   {/* Envelope Flap Triangles Simulation */}
                   <div className="text-center mt-3">
-                    <span className="text-amber-400 font-serif text-[11px] sm:text-xs font-bold tracking-widest block mb-0.5">
-                      ॥ श्री गणेशाय नमः ॥
+                    <span className="text-amber-400 font-kannada text-xs sm:text-sm font-bold tracking-widest block mb-0.5">
+                      ॥ ಶ್ರೀ ಗಣೇಶಾಯ ನಮಃ ॥
                     </span>
                     <p className="text-[10px] uppercase tracking-widest text-amber-300/70 font-sans">
-                      Together With Their Families
+                      Together With Their Families • ಆಹ್ವಾನ ಪತ್ರಿಕೆ
                     </p>
                     <p
                       className="text-xl sm:text-2xl mt-1 font-serif text-amber-100 tracking-wider font-semibold"
@@ -125,6 +129,11 @@ export default function DateRevealOpening({
                     >
                       {groomName} & {brideName}
                     </p>
+                    {groomKannada && brideKannada && (
+                      <p className="text-xs sm:text-sm font-kannada text-amber-300/90 font-medium">
+                        {groomKannada} ಮತ್ತು {brideKannada}
+                      </p>
+                    )}
                   </div>
 
                   {/* Wax Seal Centerpiece */}
@@ -135,21 +144,21 @@ export default function DateRevealOpening({
                   >
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-amber-700 via-amber-500 to-yellow-300 p-1 shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center">
                       <div className="w-full h-full rounded-full bg-[#3F0A11] border-2 border-amber-300/70 flex flex-col items-center justify-center text-amber-300 shadow-inner">
-                        <span className="text-amber-400 text-lg leading-none font-bold">ॐ</span>
-                        <span className="text-[10px] tracking-wider uppercase font-serif mt-0.5 font-bold">
-                          OPEN
+                        <span className="text-amber-300 text-xl font-kannada font-bold leading-none">ಶ್ರೀ</span>
+                        <span className="text-[9px] tracking-wider uppercase font-serif mt-0.5 font-bold">
+                          ತೆರೆಯಿರಿ
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs text-amber-200/70 tracking-widest mt-3 uppercase group-hover:text-amber-300 transition-colors">
-                      Tap To Open Invitation
+                    <span className="text-xs text-amber-200/80 tracking-widest mt-3 uppercase font-kannada group-hover:text-amber-300 transition-colors">
+                      ಆಹ್ವಾನ ಪತ್ರಿಕೆ ತೆರೆಯಿರಿ • Tap To Open
                     </span>
                   </motion.div>
 
                   {/* Bottom tagline */}
                   <div className="text-center mb-2">
-                    <p className="text-[11px] text-amber-200/50 tracking-wider">
-                      Save The Date • Royal Celebration
+                    <p className="text-[11px] text-amber-200/60 tracking-wider font-kannada">
+                      ॥ ಶುಭ ವಿವಾಹ ಮಹೋತ್ಸವ • Royal Celebration ॥
                     </p>
                   </div>
                 </div>
@@ -176,7 +185,10 @@ export default function DateRevealOpening({
                   transition={{ delay: 0.2, duration: 0.6 }}
                   className="space-y-1"
                 >
-                  <p className="text-xs sm:text-sm tracking-[0.25em] text-amber-800 uppercase font-medium">
+                  <span className="text-xs sm:text-sm font-kannada font-bold text-amber-800 tracking-wider block">
+                    ॥ ಶುಭ ವಿವಾಹ ಮಹೋತ್ಸವ ॥
+                  </span>
+                  <p className="text-xs tracking-[0.2em] text-amber-900/70 uppercase font-sans">
                     Together With Their Families
                   </p>
                 </motion.div>
@@ -186,24 +198,24 @@ export default function DateRevealOpening({
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5, duration: 0.7 }}
-                  className="my-5"
+                  className="my-4"
                 >
                   <h2
-                    className="text-3xl sm:text-4xl lg:text-5xl font-serif text-amber-950 font-bold tracking-tight"
+                    className="text-2xl sm:text-3xl lg:text-4xl font-serif text-amber-950 font-bold tracking-tight"
                     style={{ fontFamily }}
                   >
-                    {groomName}
+                    {groomName} {groomKannada && <span className="font-kannada text-lg text-amber-800">({groomKannada})</span>}
                   </h2>
-                  <div className="my-2 flex items-center justify-center gap-3">
+                  <div className="my-1.5 flex items-center justify-center gap-3">
                     <div className="h-[1px] w-12 bg-amber-600/40" />
                     <Heart className="w-4 h-4 fill-amber-600 text-amber-600" />
                     <div className="h-[1px] w-12 bg-amber-600/40" />
                   </div>
                   <h2
-                    className="text-3xl sm:text-4xl lg:text-5xl font-serif text-amber-950 font-bold tracking-tight"
+                    className="text-2xl sm:text-3xl lg:text-4xl font-serif text-amber-950 font-bold tracking-tight"
                     style={{ fontFamily }}
                   >
-                    {brideName}
+                    {brideName} {brideKannada && <span className="font-kannada text-lg text-amber-800">({brideKannada})</span>}
                   </h2>
                 </motion.div>
 
@@ -212,9 +224,9 @@ export default function DateRevealOpening({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.6 }}
-                  className="text-xs sm:text-sm tracking-widest text-amber-900/80 uppercase font-sans mb-4"
+                  className="text-xs tracking-wide text-amber-900/90 font-kannada mb-3"
                 >
-                  Invite you to celebrate their wedding
+                  ನಮ್ಮ ವಿವಾಹ ಮಹೋತ್ಸವಕ್ಕೆ ತಮಗೆಲ್ಲರಿಗೂ ಪ್ರೀತಿಯ ಆದರದ ಸುಸ್ವಾಗತ
                 </motion.p>
 
                 {/* Save The Date Reveal Box */}
@@ -224,8 +236,8 @@ export default function DateRevealOpening({
                   transition={{ delay: 1.1, duration: 0.7 }}
                   className="w-full max-w-sm rounded-xl bg-amber-100/70 border border-amber-300/80 p-3 sm:p-4 my-2"
                 >
-                  <span className="text-[11px] font-bold tracking-[0.2em] text-amber-900 uppercase">
-                    Save The Date
+                  <span className="text-[11px] font-bold tracking-[0.2em] text-amber-900 uppercase font-kannada">
+                    ಶುಭ ದಿನಾಂಕ • SAVE THE DATE
                   </span>
                   <p
                     className="text-lg sm:text-xl font-serif text-amber-950 font-bold mt-1 tracking-wide"
@@ -241,9 +253,9 @@ export default function DateRevealOpening({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.4, duration: 0.6 }}
                   onClick={handleEnterWebsite}
-                  className="mt-6 px-8 py-3 rounded-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-amber-50 font-serif text-sm tracking-widest uppercase shadow-lg shadow-amber-900/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group cursor-pointer"
+                  className="mt-5 px-8 py-3 rounded-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-amber-50 font-kannada text-sm font-semibold tracking-wide shadow-lg shadow-amber-900/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group cursor-pointer"
                 >
-                  <span>Explore Celebration</span>
+                  <span>ಆಮಂತ್ರಣ ವೀಕ್ಷಿಸಿ • Explore Celebration</span>
                   <ChevronDown className="w-4 h-4 text-amber-200 group-hover:translate-y-0.5 transition-transform" />
                 </motion.button>
               </motion.div>

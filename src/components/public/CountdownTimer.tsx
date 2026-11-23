@@ -56,17 +56,17 @@ export default function CountdownTimer({
   }
 
   const timeUnits = [
-    { label: "DAYS", value: String(timeLeft.days).padStart(3, "0") },
-    { label: "HOURS", value: String(timeLeft.hours).padStart(2, "0") },
-    { label: "MINUTES", value: String(timeLeft.minutes).padStart(2, "0") },
-    { label: "SECONDS", value: String(timeLeft.seconds).padStart(2, "0") },
+    { label: "DAYS", knLabel: "ದಿನಗಳು", value: String(timeLeft.days).padStart(3, "0") },
+    { label: "HOURS", knLabel: "ಗಂಟೆಗಳು", value: String(timeLeft.hours).padStart(2, "0") },
+    { label: "MINS", knLabel: "ನಿಮಿಷ", value: String(timeLeft.minutes).padStart(2, "0") },
+    { label: "SECS", knLabel: "ಸೆಕೆಂಡ್", value: String(timeLeft.seconds).padStart(2, "0") },
   ];
 
   return (
     <div className="w-full max-w-2xl mx-auto my-10">
-      <div className="flex items-center justify-center gap-2 mb-4 text-xs tracking-[0.25em] uppercase text-amber-800 font-medium font-sans">
+      <div className="flex items-center justify-center gap-2 mb-4 text-xs tracking-[0.2em] uppercase text-amber-800 font-medium font-kannada">
         <Clock className="w-3.5 h-3.5 text-amber-600" />
-        <span>Our Big Day Is In</span>
+        <span>ವಿವಾಹ ಮಹೋತ್ಸವಕ್ಕೆ ಇನ್ನು • COUNTDOWN</span>
       </div>
 
       <div className="grid grid-cols-4 gap-2.5 sm:gap-5">
@@ -81,9 +81,14 @@ export default function CountdownTimer({
             >
               {unit.value}
             </span>
-            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase mt-1">
-              {unit.label}
-            </span>
+            <div className="flex flex-col items-center mt-1">
+              <span className="text-[10px] sm:text-xs font-kannada font-bold text-amber-900 leading-tight">
+                {unit.knLabel}
+              </span>
+              <span className="text-[8px] sm:text-[9px] font-semibold tracking-wider text-gray-400 uppercase">
+                {unit.label}
+              </span>
+            </div>
           </div>
         ))}
       </div>

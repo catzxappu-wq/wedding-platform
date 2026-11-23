@@ -72,9 +72,9 @@ export default function RsvpSection({
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-300 via-amber-600 to-amber-300" />
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs tracking-widest uppercase font-semibold font-sans mb-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 text-xs tracking-widest uppercase font-semibold font-kannada mb-3">
             <Heart className="w-3.5 h-3.5 text-amber-600 fill-current" />
-            <span>Celebrate With Us</span>
+            <span>ಆಗಮನ ದೃಢೀಕರಿಸಿ • CELEBRATE WITH US</span>
           </div>
           <h2
             className="text-3xl sm:text-4xl font-serif text-gray-900 font-bold"
@@ -82,8 +82,11 @@ export default function RsvpSection({
           >
             Will You Grace Our Day?
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto mt-2">
-            Please kindly let us know if you will be able to join our wedding festivities.
+          <p className="text-base sm:text-lg font-kannada font-bold text-amber-800 mt-1">
+            ತಾವು ವಿವಾಹಕ್ಕೆ ಆಗಮಿಸುವಿರಾ?
+          </p>
+          <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto mt-2 leading-relaxed">
+            ನಮ್ಮ ಈ ಶುಭ ಸಮಾರಂಭದಲ್ಲಿ ಭಾಗವಹಿಸಿ ವಧು-ವರರನ್ನು ಆಶೀರ್ವದಿಸಲು ನಿಮ್ಮ ಆಗಮನವನ್ನು ದೃಢೀಕರಿಸಿ.
           </p>
         </div>
 
@@ -279,7 +282,7 @@ export default function RsvpSection({
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span>Send RSVP Response</span>
+                  <span className="font-kannada">ದೃಢೀಕರಿಸಿ • Send RSVP Response</span>
                 </>
               )}
             </button>
