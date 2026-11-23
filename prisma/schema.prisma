@@ -166,3 +166,14 @@ model Setting {
 
   @@map("settings")
 }
+
+model MediaUpload {
+  id        String   @id
+  filename  String
+  mimeType  String   @default("audio/mpeg")
+  data      String
+  sizeBytes Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("media_uploads")
+}

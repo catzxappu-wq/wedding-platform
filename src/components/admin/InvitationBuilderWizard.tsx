@@ -76,30 +76,95 @@ export default function InvitationBuilderWizard({
     },
   ];
 
-  const handleAudioUploadFromStorage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [audioUploading, setAudioUploading] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+
+  const handleAudioUploadFromStorage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1.5 * 1024 * 1024) {
+    // Support up to 10 MB audio files
+    if (file.size > 10 * 1024 * 1024) {
       alert(
-        `Selected audio file is ${((file.size / (1024 * 1024)).toFixed(1))} MB. To ensure fast mobile loading and stay within server limits, direct audio files must be under 1.5MB. For longer songs, please select one of the high quality presets below or enter an MP3 URL.`
+        `Selected audio file is ${((file.size / (1024 * 1024)).toFixed(1))} MB. Maximum audio file size is 10 MB. Please choose an audio file under 10 MB or select a preset.`
       );
       if (audioInputRef.current) audioInputRef.current.value = "";
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
+    setAudioUploading(true);
+    setAudioProgress(10);
+    showToast("Preparing 10MB chunked audio upload...");
+
+    try {
+      // Chunked upload: 2MB per chunk for high reliability across serverless boundaries
+      const chunkSize = 2 * 1024 * 1024;
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      const uploadId = `audio-${Date.now()}`;
+      let finalResult: any = null;
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = Math.min(start + chunkSize, file.size);
+        const chunkBlob = file.slice(start, end);
+
+        // Convert slice to base64
+        const chunkBase64: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const res = (reader.result as string) || "";
+            resolve(res);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(chunkBlob);
+        });
+
+        const progressPercent = Math.round(((i + 1) / totalChunks) * 100);
+        setAudioProgress(progressPercent);
+
+        const res = await fetch("/api/upload/audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uploadId,
+            chunkIndex: i,
+            totalChunks,
+            filename: file.name,
+            mimeType: file.type || "audio/mpeg",
+            chunkData: chunkBase64,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Upload chunk failed (${res.status})`);
+        }
+
+        const data = await res.json();
+        if (data.complete) {
+          finalResult = data;
+        }
+      }
+
+      if (finalResult && finalResult.url) {
         setFormData((prev) => ({
           ...prev,
-          musicUrl: reader.result as string,
-          musicTitle: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+          musicUrl: finalResult.url,
+          musicTitle: finalResult.title || file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
           musicEnabled: true,
         }));
+        showToast("Audio uploaded successfully (up to 10MB supported)!");
+      } else {
+        throw new Error("Could not finalize audio upload");
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error("Audio upload error:", err);
+      alert(err.message || "Failed to upload audio file");
+    } finally {
+      setAudioUploading(false);
+      setAudioProgress(0);
+      if (audioInputRef.current) audioInputRef.current.value = "";
+    }
   };
 
   // Form State
@@ -1015,8 +1080,8 @@ export default function InvitationBuilderWizard({
                       Upload Audio File From Storage
                     </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
-                    MP3, WAV, OGG up to 1.5MB (or select preset below)
+                  <span className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-medium">
+                    MP3, WAV, OGG, M4A up to 10 MB
                   </span>
                 </div>
 
@@ -1028,20 +1093,38 @@ export default function InvitationBuilderWizard({
                   className="hidden"
                 />
 
-                <div
-                  onClick={() => audioInputRef.current?.click()}
-                  className="p-6 rounded-xl border-2 border-dashed border-gray-700 hover:border-amber-500/60 bg-gray-950/40 hover:bg-amber-500/5 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                    <Volume2 className="w-5 h-5" />
+                {audioUploading ? (
+                  <div className="p-6 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+                    <div className="flex items-center justify-between text-xs text-amber-300 font-semibold">
+                      <span>Uploading 10MB Soundtrack (Chunked stream)...</span>
+                      <span>{audioProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-amber-300 h-full transition-all duration-300"
+                        style={{ width: `${audioProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Processing high-fidelity wedding audio directly into storage...
+                    </p>
                   </div>
-                  <p className="text-xs font-medium text-gray-200">
-                    Click to select audio soundtrack from your computer or phone
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Direct storage upload - no external hosting required
-                  </p>
-                </div>
+                ) : (
+                  <div
+                    onClick={() => audioInputRef.current?.click()}
+                    className="p-6 rounded-xl border-2 border-dashed border-gray-700 hover:border-amber-500/60 bg-gray-950/40 hover:bg-amber-500/5 transition-all cursor-pointer text-center group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                      <Volume2 className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-medium text-gray-200">
+                      Click to select audio soundtrack from your computer or phone (up to 10 MB)
+                    </p>
+                    <p className="text-[11px] text-amber-400/80 mt-1">
+                      Direct storage upload with auto-chunking — full songs supported!
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Option B: Preset Wedding Melodies */}
