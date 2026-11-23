@@ -570,30 +570,6 @@ async function main() {
       events: {
         create: [
           {
-            name: "Haldi & Mehendi Celebration",
-            date: new Date("2026-12-16T10:00:00+05:30"),
-            startTime: "10:00 AM",
-            endTime: "02:00 PM",
-            venueName: "The Royal Courtyard",
-            address: "The Leela Palace, Bengaluru",
-            description: "Auspicious turmeric blessings, intricate henna designs, live folk music, and joyous celebration.",
-            icon: "Sun",
-            imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 1,
-          },
-          {
-            name: "Sangeet & Dance Night",
-            date: new Date("2026-12-17T18:30:00+05:30"),
-            startTime: "06:30 PM",
-            endTime: "11:30 PM",
-            venueName: "Grand Ballroom",
-            address: "The Leela Palace, Bengaluru",
-            description: "An energetic evening of choreography, dhol beats, family performances, and culinary delights.",
-            icon: "Music",
-            imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 2,
-          },
-          {
             name: "Auspicious Muhurtham & Saat Phere",
             date: new Date("2026-12-18T10:30:00+05:30"),
             startTime: "10:30 AM",
@@ -603,7 +579,7 @@ async function main() {
             description: "Sacred Vedic rituals, Kanyadaan, Mangalya Dharanam, and the seven eternal vows around the holy fire.",
             icon: "Heart",
             imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 3,
+            sortOrder: 1,
           },
           {
             name: "Grand Reception Gala",
@@ -615,7 +591,7 @@ async function main() {
             description: "An elaborate banquet dinner, cake cutting, toasts, classical fusion music, and celebrations.",
             icon: "Sparkles",
             imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 4,
+            sortOrder: 2,
           },
         ],
       },

@@ -215,18 +215,6 @@ export default function InvitationBuilderWizard({
       ? initialData.events
       : [
           {
-            name: "Haldi Ceremony",
-            date: "2026-12-16",
-            startTime: "10:00 AM",
-            endTime: "01:00 PM",
-            venueName: "The Royal Gardens",
-            address: "Bengaluru, Karnataka",
-            description: "Auspicious turmeric ceremony with singing and marigold celebration.",
-            icon: "Sun",
-            imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 1,
-          },
-          {
             name: "The Royal Wedding & Muhurtham",
             date: "2026-12-18",
             startTime: "10:30 AM",
@@ -236,7 +224,7 @@ export default function InvitationBuilderWizard({
             description: "Sacred vows and traditional rituals under the floral canopy.",
             icon: "Heart",
             imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80",
-            sortOrder: 2,
+            sortOrder: 1,
           },
         ],
     gallery: initialData?.gallery?.length
@@ -778,7 +766,7 @@ export default function InvitationBuilderWizard({
                 <span>Wedding Events & Ceremonies</span>
               </h2>
               <p className="text-xs text-gray-400 mt-1">
-                Add unlimited events (e.g. Haldi, Mehendi, Sangeet, Muhurtham, Reception).
+                Choose only the events you want. Tap any ceremony below to toggle it on/off, or remove any event with the trash icon.
               </p>
             </div>
 
@@ -802,8 +790,76 @@ export default function InvitationBuilderWizard({
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-amber-500/30 transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Event</span>
+              <span>Add Custom Event</span>
             </button>
+          </div>
+
+          {/* Quick Ceremony Toggles */}
+          <div className="p-4 rounded-2xl bg-gray-900/80 border border-amber-500/20 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-amber-300">
+                Quick Select Ceremonies (Tap to include/exclude):
+              </span>
+              <span className="text-[10px] text-gray-400">
+                {formData.events.length} event{formData.events.length !== 1 ? "s" : ""} selected
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "muhurtham", name: "Auspicious Muhurtham & Saat Phere", kn: "ಮುಹೂರ್ತ ಹಾಗೂ ಸಪ್ತಪದಿ", icon: "Heart", time: "10:30 AM - 01:30 PM", desc: "Sacred Vedic rituals, Kanyadaan, and Saat Phere." },
+                { key: "reception", name: "Grand Reception Gala", kn: "ಆರತಕ್ಷತೆ ಸಮಾರಂಭ", icon: "Sparkles", time: "07:30 PM - 11:30 PM", desc: "Banquet dinner, congratulations, music, and celebration." },
+                { key: "haldi", name: "Haldi & Mehendi Celebration", kn: "ಅರಿಶಿನ ಶಾಸ್ತ್ರ", icon: "Sun", time: "10:00 AM - 02:00 PM", desc: "Turmeric blessings, henna designs, and folk music." },
+                { key: "sangeet", name: "Sangeet & Dance Night", kn: "ಸಂಗೀತ ಸಂಜೆ", icon: "Music", time: "06:30 PM - 11:30 PM", desc: "Choreography, dhol beats, and joyous performances." },
+                { key: "varapooje", name: "Varapooje / Welcome Ritual", kn: "ವರಪೂಜೆ", icon: "Sparkles", time: "05:00 PM - 07:00 PM", desc: "Traditional welcoming of the groom and family." },
+              ].map((preset) => {
+                const isSelected = formData.events.some((ev: any) =>
+                  ev.name.toLowerCase().includes(preset.key) ||
+                  preset.name.toLowerCase().includes(ev.name.toLowerCase())
+                );
+
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        // Remove this preset event
+                        const updated = formData.events.filter(
+                          (ev: any) =>
+                            !ev.name.toLowerCase().includes(preset.key) &&
+                            !preset.name.toLowerCase().includes(ev.name.toLowerCase())
+                        );
+                        setFormData({ ...formData, events: updated });
+                      } else {
+                        // Add this preset event
+                        const newEv = {
+                          name: preset.name,
+                          date: formData.weddingDate,
+                          startTime: preset.time.split(" - ")[0] || "10:00 AM",
+                          endTime: preset.time.split(" - ")[1] || "01:00 PM",
+                          venueName: formData.venue.venueName || "Wedding Mandapam",
+                          address: formData.venue.fullAddress || "Bengaluru, Karnataka",
+                          description: preset.desc,
+                          icon: preset.icon,
+                          imageUrl: "",
+                          sortOrder: formData.events.length + 1,
+                        };
+                        setFormData({ ...formData, events: [...formData.events, newEv] });
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                      isSelected
+                        ? "bg-amber-600 text-white border-amber-500 shadow-md scale-102"
+                        : "bg-gray-800 text-gray-300 border-gray-700 hover:border-gray-600"
+                    }`}
+                  >
+                    <span>{isSelected ? "✓" : "+"}</span>
+                    <span>{preset.name}</span>
+                    <span className="font-kannada text-[11px] opacity-80">({preset.kn})</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -816,19 +872,17 @@ export default function InvitationBuilderWizard({
                   <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">
                     Event #{index + 1}
                   </span>
-                  {formData.events.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = formData.events.filter((_: any, i: number) => i !== index);
-                        setFormData({ ...formData, events: updated });
-                      }}
-                      className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                      title="Remove event"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = formData.events.filter((_: any, i: number) => i !== index);
+                      setFormData({ ...formData, events: updated });
+                    }}
+                    className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Remove event"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
