@@ -13,11 +13,10 @@ interface ClientInvitationHydratorProps {
 export default function ClientInvitationHydrator({ slug }: ClientInvitationHydratorProps) {
   const [invitation, setInvitation] = useState<InvitationWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [allCached, setAllCached] = useState<any[]>([]);
 
-  useEffect(() => {
-    const cleanSlug = (slug || "").toLowerCase().trim();
-
+  const loadData = async (cleanSlug: string) => {
     try {
       if (typeof window !== "undefined") {
         // 1. Check URL hash for embedded data if present
@@ -39,38 +38,69 @@ export default function ClientInvitationHydrator({ slug }: ClientInvitationHydra
         const cacheKey = "wedding_invitations_cache";
         const raw = localStorage.getItem(cacheKey);
         if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list)) {
-            setAllCached(list);
-            const found = list.find((item: any) => {
-              const itemSlug = (item.slug || "").toLowerCase().trim();
-              if (itemSlug === cleanSlug) return true;
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              setAllCached(list);
+              const found = list.find((item: any) => {
+                const itemSlug = (item.slug || "").toLowerCase().trim();
+                if (itemSlug === cleanSlug) return true;
 
-              const coupleSlug = `${item.couple?.groomName || ""}-${item.couple?.brideName || ""}`
-                .toLowerCase()
-                .replace(/\s+/g, "-")
-                .replace(/[^a-z0-9-]/g, "");
-              if (coupleSlug === cleanSlug) return true;
+                const coupleSlug = `${item.couple?.groomName || ""}-${item.couple?.brideName || ""}`
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+                  .replace(/[^a-z0-9-]/g, "");
+                if (coupleSlug === cleanSlug) return true;
 
-              if (item.title && item.title.toLowerCase().includes(cleanSlug)) return true;
-              return false;
-            });
+                if (item.title && item.title.toLowerCase().includes(cleanSlug)) return true;
+                return false;
+              });
 
-            if (found) {
-              const formatted = formatInvitation(found);
+              if (found) {
+                const formatted = formatInvitation(found);
+                setInvitation(formatted);
+                setLoading(false);
+
+                // Auto-sync back to server in background so other requests find it
+                fetch("/api/invitations/sync", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(formatted),
+                }).catch(() => {});
+
+                return;
+              }
+            }
+          } catch (jsonErr) {
+            console.warn("Local storage parse error:", jsonErr);
+          }
+        }
+
+        // 3. Fallback: Network fetch from public API endpoint
+        try {
+          const res = await fetch(`/api/invitations/public/${encodeURIComponent(cleanSlug)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.invitation) {
+              const formatted = formatInvitation(data.invitation);
               setInvitation(formatted);
+
+              // Cache locally on this device as well
+              try {
+                const existing = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+                if (Array.isArray(existing)) {
+                  const filtered = existing.filter((x: any) => x.id !== formatted.id && x.slug !== formatted.slug);
+                  filtered.unshift(formatted);
+                  localStorage.setItem(cacheKey, JSON.stringify(filtered.slice(0, 10)));
+                }
+              } catch (_) {}
+
               setLoading(false);
-
-              // Auto-sync back to server in background so other requests find it
-              fetch("/api/invitations/sync", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formatted),
-              }).catch(() => {});
-
               return;
             }
           }
+        } catch (netErr) {
+          console.warn("Public API fetch error in hydrator:", netErr);
         }
       }
     } catch (err) {
@@ -78,7 +108,19 @@ export default function ClientInvitationHydrator({ slug }: ClientInvitationHydra
     }
 
     setLoading(false);
+  };
+
+  useEffect(() => {
+    const cleanSlug = (slug || "").toLowerCase().trim();
+    loadData(cleanSlug);
   }, [slug]);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    const cleanSlug = (slug || "").toLowerCase().trim();
+    await loadData(cleanSlug);
+    setRetrying(false);
+  };
 
   function formatInvitation(raw: any): InvitationWithRelations {
     const toDateStr = (val: any) => {
@@ -209,6 +251,14 @@ export default function ClientInvitationHydrator({ slug }: ClientInvitationHydra
         )}
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-amber-950 font-semibold text-xs tracking-wider uppercase transition-colors shadow"
+          >
+            <RefreshCw className={`w-4 h-4 ${retrying ? "animate-spin" : ""}`} />
+            <span>{retrying ? "Checking..." : "Refresh Invitation"}</span>
+          </button>
           <Link
             href="/"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold tracking-wider uppercase transition-colors"
@@ -218,7 +268,7 @@ export default function ClientInvitationHydrator({ slug }: ClientInvitationHydra
           </Link>
           <Link
             href="/admin/invitations/create"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold tracking-wider uppercase transition-colors shadow-md"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold tracking-wider uppercase transition-colors shadow-md"
           >
             <Sparkles className="w-4 h-4" />
             <span>Create Invitation</span>
