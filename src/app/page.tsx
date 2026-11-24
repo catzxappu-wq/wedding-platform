@@ -14,7 +14,6 @@ import {
   Music,
   Share2,
 } from "lucide-react";
-import PrivateInvitationLookup from "@/components/public/PrivateInvitationLookup";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -85,11 +84,6 @@ export default function HomePage() {
               <span>+ Create Invitation</span>
             </Link>
           </div>
-        </div>
-
-        {/* Private Invitation Guest Lookup Box */}
-        <div className="pt-2">
-          <PrivateInvitationLookup />
         </div>
 
         {/* Platform Features Grid */}
