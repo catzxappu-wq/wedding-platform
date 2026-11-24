@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ForeverYours | Premium Wedding Invitation Management Platform",
+  title: "CATZX DIGITAL INVITATION | Bespoke Luxury Digital Invitations",
   description: "Create, customize, manage, and share bespoke, luxury digital wedding invitations.",
-  keywords: ["wedding invitations", "digital wedding cards", "wedding platform", "luxury invitations", "RSVP"],
+  keywords: ["wedding invitations", "digital wedding cards", "CATZX DIGITAL INVITATION", "luxury invitations", "RSVP"],
 };
 
 export default function RootLayout({

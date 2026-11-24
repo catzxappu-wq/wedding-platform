@@ -545,7 +545,7 @@ export default function InvitationExperience({ invitation }: InvitationExperienc
         </button>
 
         <p className="text-[11px] text-gray-400">
-          Powered by ForeverYours Wedding Invitation Platform
+          Powered by CATZX DIGITAL INVITATION
         </p>
       </footer>
     </div>

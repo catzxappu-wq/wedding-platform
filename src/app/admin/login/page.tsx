@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs tracking-widest uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>ForeverYours Platform</span>
+            <span>CATZX DIGITAL INVITATION</span>
           </div>
           <h1 className="text-3xl font-serif text-white font-bold tracking-tight">
             Administrator Portal

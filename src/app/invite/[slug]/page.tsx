@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {
     return {
       title: "Wedding Invitation",
-      description: "ForeverYours Wedding Celebration",
+      description: "CATZX DIGITAL INVITATION Celebration",
     };
   }
 }

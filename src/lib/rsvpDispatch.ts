@@ -188,7 +188,7 @@ export function buildWhatsAppMessage(params: {
 📥 *DOWNLOAD FULL CSV REPORT:*
 ${downloadUrl}
 ━━━━━━━━━━━━━━━━━━━━
-_Generated automatically by ForeverYours Wedding Platform_`;
+_Generated automatically by CATZX DIGITAL INVITATION_`;
 }
 
 /**
@@ -290,7 +290,7 @@ export async function executeRsvpDispatch(params: {
 
               <p style="font-size: 12px; color: #6B7280; text-align: center; margin-top: 30px;">
                 The complete RSVP spreadsheet is also attached to this email as a CSV file.<br/>
-                ForeverYours Wedding Invitation Platform
+                CATZX DIGITAL INVITATION
               </p>
             </div>
           `,

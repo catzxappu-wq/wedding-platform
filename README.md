@@ -1,4 +1,4 @@
-# ForeverYours | Commercial Wedding Invitation Management Platform
+# CATZX DIGITAL INVITATION | Bespoke Digital Wedding Invitation Platform
 
 A modern, production-ready, database-driven **Wedding Invitation Management Platform** built with **Next.js 14**, **React**, **TypeScript**, **Tailwind CSS**, **Prisma ORM**, **Framer Motion**, and **PostgreSQL / SQLite**.
 

@@ -31,10 +31,10 @@ export default function HomePage() {
           </div>
           <div>
             <span className="font-serif font-bold text-lg text-white tracking-wide block">
-              ForeverYours
+              CATZX
             </span>
-            <span className="text-[10px] text-amber-400/80 tracking-widest uppercase font-sans font-semibold">
-              Digital Wedding Platform
+            <span className="text-[10px] text-amber-400 tracking-widest uppercase font-sans font-semibold">
+              Digital Invitation
             </span>
           </div>
         </Link>
@@ -181,7 +181,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="h-20 border-t border-gray-800/80 px-6 sm:px-12 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2 py-4 sm:py-0">
-        <span>ForeverYours Digital Wedding Invitation Platform</span>
+        <span>CATZX DIGITAL INVITATION</span>
         <span>Private & Secure • Accessible Only via Direct Link</span>
       </footer>
     </div>

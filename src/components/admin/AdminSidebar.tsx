@@ -83,10 +83,10 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
             </div>
             <div>
               <span className="font-serif font-bold text-base text-white tracking-wide block">
-                ForeverYours
+                CATZX
               </span>
-              <span className="text-[10px] text-amber-400/80 tracking-widest uppercase font-sans font-semibold">
-                Admin Console
+              <span className="text-[10px] text-amber-400 tracking-widest uppercase font-sans font-semibold">
+                Digital Invitation
               </span>
             </div>
           </Link>
