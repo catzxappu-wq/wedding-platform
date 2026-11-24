@@ -13,24 +13,16 @@ export async function GET() {
 
   let dbConnected = false;
   let dbError: string | null = null;
-  let dbInvitations: any[] = [];
+  let dbCount = 0;
 
   try {
-    const list = await prisma.invitation.findMany({
-      select: { id: true, slug: true, title: true, status: true },
-    });
+    dbCount = await prisma.invitation.count();
     dbConnected = true;
-    dbInvitations = list;
   } catch (err: any) {
     dbError = err?.message || "Could not query database";
   }
 
-  const memoryInvitations = invitationStore.getAllInvitations().map((i) => ({
-    id: i.id,
-    slug: i.slug,
-    title: i.title,
-    status: i.status,
-  }));
+  const memoryCount = invitationStore.getAllInvitations().length;
 
   const dbUrl = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL || "";
   const match = dbUrl.match(/postgres(?:ql)?:\/\/[^\s'"<>]+/);
@@ -46,10 +38,8 @@ export async function GET() {
     parsedDbUrlPrefix: parsedDbUrl.slice(0, 25),
     dbConnected,
     dbError,
-    dbCount: dbInvitations.length,
-    dbInvitations,
-    memoryCount: memoryInvitations.length,
-    memoryInvitations,
+    dbCount,
+    memoryCount,
     timestamp: new Date().toISOString(),
   });
 }
