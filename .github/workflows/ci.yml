@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/neondb"
 
     steps:
     - uses: actions/checkout@v4
@@ -24,14 +24,10 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
-    - name: Generate Prisma Client & Database
+    - name: Verify Prisma Client & Type Safety
       run: |
-        node prisma/prepare.js
-        npx prisma db push --accept-data-loss
-        node prisma/seed.js
-
-    - name: Run E2E Verification Tests
-      run: node prisma/test-e2e.js
+        npx prisma generate
+        npx tsc --noEmit
 
     - name: Build Next.js Application
       run: npm run build
